@@ -142,7 +142,7 @@ a {
 }
 
 .new-note-button {
-  background-color: #4caf4f00;
+  background-color: #00000000;
   /* ירוק */
   color: rgba(255, 255, 255, 0);
   border: none;
@@ -150,12 +150,12 @@ a {
   cursor: pointer;
   font-size: 18px;
   margin: 10px;
-  border-radius: 5px;
   transition: all 0.5s ease;
 }
 
 .new-note-button:hover {
   color: rgb(255, 255, 255);
+  transform: scale(1);
 }
 
 .new-note-button:active {
@@ -171,11 +171,16 @@ a {
   position: absolute;
   bottom: 30px;
   left: 40px;
-  transition: all 0.5s ease;
+  transition: all 0.2s ease-out;
 }
 
 .delete-note-button:hover {
   border-radius: 0%;
+}
+
+.delete-note-button:active {
+  transform: scale(0.8);
+    rotate: 20deg;
 }
 
 .change-note-color-button {
@@ -186,11 +191,16 @@ a {
   bottom: 30px;
   left: 90px;
   border: none;
-  transition: all 0.5s ease;
+  transition: all 0.2s ease-out;
 }
 
 .change-note-color-button:hover {
   border-radius: 0%;
+}
+
+.change-note-color-button:active {
+  transform: scale(0.8);
+  rotate: 20deg;
 }
 
 .perent-icon {
