@@ -1,11 +1,11 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #1a1a1900;
+  --foreground: #fefefe;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #1a1a1900;
     --foreground: #ededed;
   }
 }
@@ -39,4 +39,203 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  /* background-color: yellowgreen; */
+  position: relative;
+
+}
+
+.text_box {
+  min-height: 70%;
+  max-height: 90%;
+  height: auto;
+  width: 50%;
+  position: relative;
+  overflow-y: scroll;
+  font-family: Arial, Helvetica, sans-serif;
+  /* background-color: #2b2b2b; */
+
+  /* הסתרת פס הגלילה */
+  scrollbar-width: none;
+  /* עבור Firefox */
+  -ms-overflow-style: none;
+  /* עבור IE ו־Edge */
+  transition: transform 0.25s ease;
+
+}
+
+.text_box::-webkit-scrollbar {
+  display: none;
+  /* עבור Chrome, Safari ו־Opera */
+}
+
+.textarea_title {
+  background-color: rgba(111, 255, 0, 0);
+  direction: rtl;
+  width: 100%;
+  font-size: 1.5rem;
+  overflow: hidden;
+  resize: none;
+  white-space: nowrap;
+  outline: none;
+  border: none;
+  margin-bottom: 2%;
+  font-weight: 300;
+}
+
+.textarea_content {
+  /* background-color: rgb(31, 31, 31); */
+  direction: rtl;
+  font-family: Arial, Helvetica, sans-serif;
+
+  min-height: 300px;
+  height: auto;
+
+  width: 100%;
+  font-size: 1rem;
+
+  overflow: hidden;
+  resize: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  outline: none;
+  color: rgb(212, 212, 212);
+
+}
+
+.textarea_content.is-empty::before {
+  content: attr(data-placeholder);
+  color: gray;
+  pointer-events: none;
+  /* חשוב כדי שהקליק יתפוס את ה-div */
+  cursor: text;
+  /* משנה את סמן העכבר כדי שיראה כמו שדה טקסט */
+  content: "כתוב כאן...";
+  user-select: none;
+  position: absolute;
+}
+
+
+.sidebar {
+  position: fixed;
+  /* מצמיד למסך */
+  top: 0;
+  right: 0;
+  /* מוצמד לצד ימין */
+  height: 100vh;
+  /* גובה מלא של החלון */
+  width: 250px;
+  /* background-color: #171717; */
+  border-left: 1px solid;
+  /* גבול משמאל */
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  transition: transform 0.25s ease;
+}
+
+.new-note-button {
+  background-color: #4caf4f00;
+  /* ירוק */
+  color: rgba(255, 255, 255, 0);
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  margin: 10px;
+  border-radius: 5px;
+  transition: all 0.5s ease;
+}
+
+.new-note-button:hover {
+  color: rgb(255, 255, 255);
+}
+
+.new-note-button:active {
+  transform: scale(0.4);
+}
+
+.delete-note-button {
+  background-color: #45a04900;
+  border: 2px solid;
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 30px;
+  left: 40px;
+  transition: all 0.5s ease;
+}
+
+.delete-note-button:hover {
+  border-radius: 0%;
+}
+
+.change-note-color-button {
+  height: 25px;
+  width: 25px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 30px;
+  left: 90px;
+  border: none;
+  transition: all 0.5s ease;
+}
+
+.change-note-color-button:hover {
+  border-radius: 0%;
+}
+
+.perent-icon {
+  display: flex;
+  position: relative;
+  height: 70px;
+  width: 100%;
+}
+
+.icon {
+  display: flex;
+  height: 70px;
+  padding: 22px;
+  justify-content: flex-end;
+  /* מצמיד את התוכן ימינה */
+  width: 100%;
+  /* חייב שיהיה רוחב מלא */
+  box-sizing: border-box;
+  /* כדי שה-padding לא יגרום לגלישת התוכן */
+}
+
+.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.note-button {
+  display: block;
+  width: 100%;
+  border: none;
+  padding: 15px;
+  text-align: right;
+  color: #A6A6A6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.note-button:hover {
+padding: 18px;
+}
+
+.note-button:active {
+  color: #ffffff;
 }
