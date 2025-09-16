@@ -56,7 +56,7 @@ a {
   min-height: 70%;
   max-height: 90%;
   height: auto;
-  width: 50%;
+  width: 45%;
   position: relative;
   overflow-y: scroll;
   font-family: Arial, Helvetica, sans-serif;
@@ -107,6 +107,7 @@ a {
   word-wrap: break-word;
   outline: none;
   color: rgb(212, 212, 212);
+  line-height: 18pt !important;
 
 }
 
@@ -180,7 +181,7 @@ a {
 
 .delete-note-button:active {
   transform: scale(0.8);
-    rotate: 20deg;
+  rotate: 20deg;
 }
 
 .change-note-color-button {
@@ -243,7 +244,7 @@ a {
 }
 
 .note-button:hover {
-padding: 18px;
+  padding: 18px;
 }
 
 .note-button:active {
