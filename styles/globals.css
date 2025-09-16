@@ -106,14 +106,14 @@ a {
   white-space: pre-wrap;
   word-wrap: break-word;
   outline: none;
-  color: rgb(212, 212, 212);
+  color: #e8eaed;
   line-height: 18pt !important;
 
 }
 
 .textarea_content.is-empty::before {
   content: attr(data-placeholder);
-  color: gray;
+  color: #e8eaed;
   pointer-events: none;
   /* חשוב כדי שהקליק יתפוס את ה-div */
   cursor: text;
