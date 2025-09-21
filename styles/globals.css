@@ -146,7 +146,7 @@ a {
 .new-note-button {
   background-color: #00000000;
   /* ירוק */
-  color: rgba(255, 255, 255, 0);
+  color: #00000000;
   border: none;
   padding: 10px;
   cursor: pointer;
