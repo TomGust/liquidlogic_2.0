@@ -323,7 +323,7 @@ export default function Home() {
             ))}
 
           </div>
-          <button onClick={handleNewNote} className="new-note-button" style={{ transform: notes.length >= 10 ? 'scale(0)' : 'scale(1)' }}>
+          <button onClick={handleNewNote} className="new-note-button" style={{ fontSize: notes.length >= 10 ? '0px' : '18px' }}>
             +
           </button>
         </div>
