@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import { useRef, useState, useEffect } from "react";
+import TooltipWrapper from './api/TooltipWrapper';
 
 export default function Home() {
   const [title, setTitle] = useState("");
@@ -322,10 +323,9 @@ export default function Home() {
               </button>
             ))}
 
+
           </div>
-          <button onClick={handleNewNote} className="new-note-button" style={{ fontSize: notes.length >= 10 ? '0px' : '18px' }}>
-            +
-          </button>
+          <button onClick={handleNewNote} className={`new-note-button ${notes.length >= 10 ? 'hidden' : ''}`} style={{ opacity: notes.length >= 10 ? '0' : '1' }}>+</button>
         </div>
         {/* Editor */}
         <div className="container" style={{ flex: 1 }}>
@@ -348,22 +348,23 @@ export default function Home() {
             </div>
           </div>
           {/* <button onClick={colorSelectedText}>צבע טקסט</button> */}
-
-          <button
-            onClick={() => {
-              if (notes.length > 1) {
-                const newNotes = notes.filter((_, idx) => idx !== currentNoteIdx);
-                setNotes(newNotes);
-                setCurrentNoteIdx(Math.max(0, currentNoteIdx - 1));
-              }
-            }}
-            className="delete-note-button"
-            style={{ borderColor: selectedNoteColor }}
-            disabled={notes.length === 1}
-          >
-          </button>
-
-          <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: selectedNoteColor }}></button>
+          <TooltipWrapper text="מחק" shortcut="Control + R" color={selectedNoteColor}>
+            <button
+              onClick={() => {
+                if (notes.length > 1) {
+                  const newNotes = notes.filter((_, idx) => idx !== currentNoteIdx);
+                  setNotes(newNotes);
+                  setCurrentNoteIdx(Math.max(0, currentNoteIdx - 1));
+                }
+              }}
+              className="delete-note-button"
+              style={{ borderColor: selectedNoteColor }}
+              disabled={notes.length === 1}
+            />
+          </TooltipWrapper>
+          <TooltipWrapper text="סגנון" shortcut="Control + T" color={selectedNoteColor}>
+            <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: selectedNoteColor }}></button>
+          </TooltipWrapper>
         </div>
       </div >
     </>

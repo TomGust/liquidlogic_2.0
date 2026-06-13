@@ -144,23 +144,45 @@ a {
 }
 
 .new-note-button {
-  background-color: #00000000;
+  background-color: #b3ff0000;
   /* ירוק */
   color: #00000000;
   border: none;
-  padding: 10px;
+  padding: 30px 15px;
   cursor: pointer;
-  font-size: 18px;
-  margin: 10px;
+  margin: 0;
+  width: 100%;
+  flex: 1;
+  box-sizing: border-box;
   transition: all 0.5s ease;
+  pointer-events: auto;
+  font-size: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
 }
 
-.new-note-button:hover {
+.new-note-button::before {
+  content: "+";
+  font-size: 18px;
+  color: #00000000;
+  transition: color 0.5s ease, opacity 0.5s ease, font-size 0.5s ease, transform 0.5s ease;
+  opacity: 1;
+}
+
+.new-note-button.hidden {
+  cursor: default;
+}
+
+.new-note-button.hidden::before {
+  font-size: 0px;
+}
+
+.new-note-button:hover::before {
   color: rgb(255, 255, 255);
-  transform: scale(1);
 }
 
-.new-note-button:active {
+.new-note-button:active::before {
   transform: scale(0.4);
 }
 
@@ -251,3 +273,4 @@ a {
 .note-button:active {
   color: #ffffff;
 }
+

@@ -1,0 +1,57 @@
+/* ייבוא הגופן Figtree עבור האנגלית */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500&display=swap');
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-popup {
+  position: absolute;
+  /* מיקום מעל האלמנט */
+  bottom: calc(100% + 15px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 70px;
+  pointer-events: none; /* מונע הפרעה ללחיצות */
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 100;
+}
+
+/* הצגת ה-Tooltip במעבר עכבר על העטיפה */
+.tooltip-wrapper:hover .tooltip-popup {
+  opacity: 1;
+}
+
+.tooltip-green-box {
+  background-color: #455d3a; /* צבע ירוק-זית תואם לתמונה */
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif; /* הגופן המבוקש לעברית */
+  font-size: 36px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  padding: 4px 20px;
+  width: 190px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  direction: rtl;
+}
+
+.tooltip-white-box {
+  background-color: #ffffff;
+  color: #1a1a1a;
+  font-family: 'Figtree', sans-serif; /* הגופן המבוקש לאנגלית */
+  font-size: 20px;
+  font-weight: 500;
+  position: absolute;
+  left: 0;
+  bottom: -5px; /* חורג מעט כלפי מטה כפי שמופיע בתמונה */
+  padding: 8px 14px;
+  z-index: 2; /* מוודא שהמלבן הלבן יושב מעל הירוק */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* צל עדין מאוד להפרדה */
+}
