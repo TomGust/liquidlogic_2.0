@@ -22,7 +22,7 @@ const THEMES = [
     background: "#002930",
     tooltip: "#003764",
     highlightText: "blue",
-    icon: "#EEE2B5",
+    icon: "#004985",
     selectedNote: "#003764b4",
     ambientColor: "blue",
     ambientOpacity: 0.4
