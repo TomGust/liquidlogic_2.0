@@ -321,7 +321,7 @@ export default function Home() {
 
   return (
     <>
-      <AmbientBackground baseColor= "blue" opacity={0.4} />
+      <AmbientBackground baseColor= "blue" opacity={0} />
 
       <Head>
         <title>liquidlogic</title>
