@@ -278,3 +278,65 @@ a {
   color: #ffffff;
 }
 
+.ambient-background-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  /* background-color: #05050a; */
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.glow-blob {
+  position: absolute;
+  border-radius: 50%;
+  /* --- התיקון הויזואלי המרכזי --- */
+  filter: blur(200px); /* טשטוש מאסיבי מאוד ליצירת מעברים רכים */
+  will-change: filter, transform; /* אופטימיזציה לתנועה חלקה */
+  opacity: var(--glow-opacity);
+  background-color: var(--base-color);
+  animation: float 35s ease-in-out infinite alternate; /* אנימציה איטית יותר */
+}
+
+/* כתם ראשון - צבע בסיס */
+.blob-1 {
+  width: 50vw;
+  height: 50vw;
+  top: -10%;
+  left: -10%;
+  animation-duration: 20s;
+}
+
+/* כתם שני - סגול יותר, מיקום שונה */
+.blob-2 {
+  width: 40vw;
+  height: 40vw;
+  bottom: -5%;
+  right: -5%;
+  /* --- כוונון עדין של הגוונים --- */
+  filter: blur(180px) hue-rotate(30deg); /* סגול-עמוק יותר */
+  animation-duration: 35s;
+  animation-direction: alternate-reverse;
+}
+
+/* כתם שלישי - תכלת יותר ובהיר יותר, במרכז */
+.blob-3 {
+  width: 35vw;
+  height: 35vw;
+  top: 30%;
+  left: 20%;
+  /* --- כוונון עדין של הגוונים --- */
+  filter: blur(220px) hue-rotate(-20deg) brightness(1.2); /* תכלת יותר ומנצנץ */
+  animation-duration: 40s;
+}
+
+/* אנימציה חלקה ועדינה יותר */
+@keyframes float {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(40px, 40px) scale(1); }
+}

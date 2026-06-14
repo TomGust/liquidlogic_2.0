@@ -1,12 +1,12 @@
 import Head from 'next/head';
 import { useRef, useState, useEffect } from "react";
 import TooltipWrapper from './api/TooltipWrapper';
+import AmbientBackground from './api/AmbientBackground';
 
 export default function Home() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState('');
   const textRef = useRef(null);
-  const [selectedColor, setSelectedColor] = useState('#ea8e51ff'); // צבע טקסט
   const [deleteline, setDeleteLine] = useState(false);
   const [selectedNoteColor, setSelectedNoteColor] = useState("#3C552D"); // צבע פתק נוכחי
 
@@ -321,10 +321,14 @@ export default function Home() {
 
   return (
     <>
+      <AmbientBackground baseColor= "blue" opacity={0.4} />
+
       <Head>
         <title>liquidlogic</title>
         <link rel="icon" href="./icon.svg" />
       </Head>
+
+
       <div style={{ display: "flex", height: "100vh" }}>
         <div
           className="background"
