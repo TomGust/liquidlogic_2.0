@@ -18,7 +18,7 @@ const THEMES = [
   },
   {
     name: "רגוע",
-    baseColor: "#EEE2B5",
+    baseColor: "#004985",
     background: "#002930",
     tooltip: "#003764",
     highlightText: "blue",
