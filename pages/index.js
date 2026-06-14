@@ -10,9 +10,19 @@ export default function Home() {
   const [deleteline, setDeleteLine] = useState(false);
   const [selectedNoteColor, setSelectedNoteColor] = useState("#3C552D"); // צבע פתק נוכחי
 
+  const placeholderSentences = [
+    "כתוב כאן...",
+    "בוא נראה מה יש לך להגיד...",
+    "בוא נעשה בזה סדר...",
+    "תראה מה אתה שווה..."
+  ];
+
+  const getRandomPlaceholder = () =>
+    placeholderSentences[Math.floor(Math.random() * placeholderSentences.length)];
+
   // פתקים
   const [notes, setNotes] = useState([
-    { title: "", content: "", color: "#3C552D" }
+    { title: "", content: "", color: "#3C552D", placeholder: getRandomPlaceholder() }
   ]);
   const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
 
@@ -71,6 +81,11 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    if (textRef.current) {
+      textRef.current.focus();
+    }
+  }, []);
 
   // עדכון פתק נוכחי
   useEffect(() => {
@@ -82,11 +97,48 @@ export default function Home() {
     }
   }, [currentNoteIdx, notes]);
 
+  const normalizeEditorHtml = (html) => {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    const textContent = tempDiv.textContent || '';
+    const isEmpty = textContent.trim() === '';
+    return { html: isEmpty ? '' : html, empty: isEmpty };
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text/plain');
+    if (!text) return;
+
+    const escapedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\r\n/g, '\n')
+      .replace(/\n/g, '<br>');
+
+    document.execCommand('insertHTML', false, escapedText);
+
+    const editor = textRef.current;
+    if (!editor) return;
+
+    const normalized = normalizeEditorHtml(editor.innerHTML);
+    if (normalized.empty && editor.innerHTML !== '') {
+      editor.innerHTML = '';
+    }
+    setContent(normalized.html);
+  };
+
   const handleInput = () => {
     const editor = textRef.current;
     if (!editor) return;
 
-    setContent(editor.innerHTML);
+    const rawHtml = editor.innerHTML;
+    const normalized = normalizeEditorHtml(rawHtml);
+    if (normalized.empty && editor.innerHTML !== '') {
+      editor.innerHTML = '';
+    }
+    setContent(normalized.html);
 
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
@@ -182,7 +234,12 @@ export default function Home() {
   const saveCurrentNote = () => {
     setNotes((prev) => {
       const updated = [...prev];
-      updated[currentNoteIdx] = { title, content, color: selectedNoteColor };
+      updated[currentNoteIdx] = {
+        ...updated[currentNoteIdx],
+        title,
+        content,
+        color: selectedNoteColor
+      };
 
       return updated;
     });
@@ -192,7 +249,10 @@ export default function Home() {
   const handleNewNote = () => {
     if (notes.length >= 10) return; // הגבלה ל-10 פתקים
     saveCurrentNote();
-    setNotes((prev) => [...prev, { title: "", content: "", color: "#3C552D" }]);
+    setNotes((prev) => [
+      ...prev,
+      { title: "", content: "", color: "#3C552D", placeholder: getRandomPlaceholder() }
+    ]);
     setCurrentNoteIdx(notes.length);
   };
 
@@ -341,9 +401,10 @@ export default function Home() {
               className={`textarea_content ${content.length === 0 ? 'is-empty' : ''}`}
               contentEditable={true}
               onInput={handleInput}
+              onPaste={handlePaste}
               onKeyDown={handleKeyDown}
               ref={textRef}
-              data-placeholder="כתוב כאן..."
+              data-placeholder={notes[currentNoteIdx]?.placeholder || "כתוב כאן..."}
             >
             </div>
           </div>
@@ -362,7 +423,7 @@ export default function Home() {
               disabled={notes.length === 1}
             />
           </TooltipWrapper>
-          <TooltipWrapper text="סגנון" shortcut="Control + T" color={selectedNoteColor}>
+          <TooltipWrapper text="סגנון" shortcut="Control + Q" color={selectedNoteColor}>
             <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: selectedNoteColor }}></button>
           </TooltipWrapper>
         </div>
