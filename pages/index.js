@@ -2,6 +2,7 @@ import Head from 'next/head';
 import { useRef, useState, useEffect } from "react";
 import TooltipWrapper from './api/TooltipWrapper';
 import AmbientBackground from './api/AmbientBackground';
+import DraggableNotesList from './api/DraggableNotesList';
 
 // הגדרת הסגנונות: כאן תוכל לשלוט בנוחות בכל הצבעים וההגדרות של שלושת המצבים
 const THEMES = [
@@ -45,9 +46,9 @@ export default function Home() {
   const [content, setContent] = useState('');
   const textRef = useRef(null);
   const [deleteline, setDeleteLine] = useState(false);
-  
+
   // הגדרת סגנון ראשוני
-  const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor); 
+  const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor);
 
   // איתור הסגנון הפעיל מתוך אובייקט ההגדרות
   const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
@@ -72,40 +73,29 @@ export default function Home() {
   useEffect(() => {
     const handleShortcut = (e) => {
       // Ctrl+y - צבע טקסט
-      if (e.ctrlKey && e.key.toLowerCase() === 'y') {
-        e.preventDefault();
-        colorSelectedText();
-      }
+      // if (e.key === 'Alt') {
+      //   e.preventDefault();
+      //   colorSelectedText();
+      // }
       // Ctrl+q - פתק חדש
-      if (e.ctrlKey && e.key.toLowerCase() === 'q') {
+      if (e.ctrlKey && e.code === 'KeyQ') {
         e.preventDefault();
         handleNewNote();
       }
-      // Ctrl+S - שמירה (דוגמה)
-      if (e.ctrlKey && e.key.toLowerCase() === 's') {
+      // Ctrl+j - החלפת צבע פתק
+      if (e.ctrlKey && e.code === 'KeyJ') {
         e.preventDefault();
-        // כאן אפשר להוסיף לוגיקת שמירה
-        console.log('שמירה...');
+        cycleNoteColor();
       }
-      // Ctrl+1 - שנה צבע לאדום
-      if (e.ctrlKey && e.key === '1') {
+      // Ctrl+1 - מחיקת פתק נוכחי
+      if (e.ctrlKey && (e.code === 'Digit1' || e.code === 'Numpad1')) {
         e.preventDefault();
-        // setSelectedColor('red');
-      }
-      // Ctrl+2 - שנה צבע לכחול
-      if (e.ctrlKey && e.key === '2') {
-        e.preventDefault();
-        // setSelectedColor('blue');
-      }
-      // Ctrl+3 - שנה צבע לירוק
-      if (e.ctrlKey && e.key === '3') {
-        e.preventDefault();
-        // setSelectedColor('green');
+        handleDeleteNote();
       }
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [activeStyle]);
+  }, [activeStyle, notes, currentNoteIdx]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -297,6 +287,15 @@ export default function Home() {
     setCurrentNoteIdx(notes.length);
   };
 
+  // מחיקת פתק נוכחי
+  const handleDeleteNote = () => {
+    if (notes.length > 1) {
+      const newNotes = notes.filter((_, idx) => idx !== currentNoteIdx);
+      setNotes(newNotes);
+      setCurrentNoteIdx(Math.max(0, currentNoteIdx - 1));
+    }
+  };
+
   // החלפת צבע בלחיצה (לפי המערך שלנו)
   const cycleNoteColor = () => {
     // קודם נשמור את תוכן הפתק הנוכחי
@@ -339,25 +338,104 @@ export default function Home() {
     });
   };
 
-  // פונקציות Drag & Drop
+  // סטייטים לניהול הגרירה והאנימציות
   const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+  const [ghostPos, setGhostPos] = useState({ y: 0, x: 0, w: 0 });
 
-  const handleDragStart = (idx) => {
+  const handleDragStart = (e, idx) => {
+    const emptyImage = new Image();
+    emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(emptyImage, 0, 0);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const offsetX = e.clientX - rect.left; // חישוב מיקום העכבר על ציר ה-X בתוך הפתק
+
+    setGhostPos({
+      y: rect.top,
+      x: rect.left,
+      w: rect.width,
+      offsetX: offsetX, // שומרים את זה בסטייט
+      offsetY: offsetY
+    });
+
     setDraggedIdx(idx);
-  };
+    setDragOverIdx(idx);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (idx) => {
-    if (draggedIdx === null || draggedIdx === idx) return;
-    const updatedNotes = [...notes];
-    const [removed] = updatedNotes.splice(draggedIdx, 1);
-    updatedNotes.splice(idx, 0, removed);
-    setNotes(updatedNotes);
+    // השורה שנוספה: בוחרת את הפתק מיד עם תחילת הגרירה
     setCurrentNoteIdx(idx);
+  };
+
+  const handleDrag = (e) => {
+    // מונע קפיצה מוזרה של הדפדפן ברגע שמשחררים את העכבר
+    if (e.clientY === 0 && e.clientX === 0) return;
+
+    setGhostPos(prev => {
+
+
+      // טריק ששומר את נקודת ההתחלה של X בפעם הראשונה בלי שנצטרך לשנות פונקציות אחרות
+      const startX = prev.startX ?? prev.x;
+
+      const targetY = e.clientY - prev.offsetY; // לאן העכבר רוצה ללכת ב-Y
+      const targetX = e.clientX - prev.offsetX; // לאן העכבר רוצה ללכת ב-X
+
+      // חישוב כמה הפתק "מתוח" בסך הכל מהנקודה המקורית (מרחק אווקלידי)
+      const stretchDistance = Math.sqrt(Math.pow(targetX - startX, 2) + Math.pow(targetY - prev.y, 2));
+
+      const MIN_Y = 60;
+      const MAX_Y = notes.length * 45 + 35; // גובה דינמי לפי מספר הפתקים (60 זה גובה משוער של פתק כולל מרווח)
+      const TENSION = 0.05; // "כוח ההתנגדות" של הגומייה. 0.15 אומר שהפתק זז רק 15% מהמרחק האמיתי של העכבר
+
+      let newY = targetY;
+
+      // 1. אפקט גומייה בגבולות של הגובה (Y)
+      if (targetY < MIN_Y) {
+        newY = MIN_Y - (MIN_Y - targetY) * TENSION; // נמתח קצת למעלה
+      } else if (targetY > MAX_Y) {
+        newY = MAX_Y + (targetY - MAX_Y) * TENSION; // נמתח קצת למטה
+      }
+
+      // 2. אפקט גומייה לצדדים (X)
+      // הפתק תמיד מעוגן ל-startX, אבל זז קצת לכיוון העכבר
+      let newX = startX + (targetX - startX) * TENSION;
+      // חישוב ההתכווצות: ככל שהמרחק (stretchDistance) גדול יותר, הפתק קטן יותר (מקסימום התכווצות ל-0.9)
+      const newScale = Math.max(0.8, 1 - (stretchDistance / 1000));
+
+      // שומרים גם את startX לסטייט כדי שהגומייה לא תאבד את מרכז הכובד שלה
+      return { ...prev, startX, x: newX, y: newY, scale: newScale };
+    });
+  };
+
+  const handleDragOver = (e, idx) => {
+    e.preventDefault();
+    if (dragOverIdx !== idx) {
+      setDragOverIdx(idx); // עדכון האינדקס שאנחנו מרחפים מעליו כרגע
+    }
+  };
+
+  const handleDragEnd = () => {
+    // מוודא שבאמת גררנו פתק למיקום חדש
+    if (draggedIdx !== null && dragOverIdx !== null && draggedIdx !== dragOverIdx) {
+      const newNotes = [...notes];
+      const item = newNotes.splice(draggedIdx, 1)[0];
+      newNotes.splice(dragOverIdx, 0, item);
+
+      setNotes(newNotes);
+
+      // מעדכן את המיקום של הפתק המסומן (הכחול) כדי שלא יברח כשהסדר משתנה
+      if (currentNoteIdx === draggedIdx) {
+        setCurrentNoteIdx(dragOverIdx);
+      } else if (draggedIdx < currentNoteIdx && dragOverIdx >= currentNoteIdx) {
+        setCurrentNoteIdx(currentNoteIdx - 1);
+      } else if (draggedIdx > currentNoteIdx && dragOverIdx <= currentNoteIdx) {
+        setCurrentNoteIdx(currentNoteIdx + 1);
+      }
+    }
+
+    // איפוס הסטייטים בסיום
     setDraggedIdx(null);
+    setDragOverIdx(null);
   };
 
   return (
@@ -392,28 +470,65 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ width: "100%" }}>
-            {notes.map((note, idx) => (
-              <button
-                key={idx}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(idx)}
-                onClick={() => handleSelectNote(idx)}
-                style={{
-                  background: idx === currentNoteIdx ? activeStyle.selectedNote : "transparent",
-                  cursor: "grab"
-                }}
-                className="note-button"
-              >
-                {note.title || `כותרת ${idx + 1}`}
-              </button>
-            ))}
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
+            {notes.map((note, idx) => {
+              // --- חישוב האנימציה עבור כל פתק בזמן הגרירה ---
+              let yOffset = "0px";
+              if (draggedIdx !== null && dragOverIdx !== null && idx !== draggedIdx) {
+                if (draggedIdx < dragOverIdx && idx > draggedIdx && idx <= dragOverIdx) {
+                  // גוררים למטה: הפתקים באמצע מחליקים למעלה (מפנים מקום)
+                  yOffset = "-100%";
+                } else if (draggedIdx > dragOverIdx && idx < draggedIdx && idx >= dragOverIdx) {
+                  // גוררים למעלה: הפתקים באמצע מחליקים למטה
+                  yOffset = "100%";
+                }
+              }
+
+              return (
+                <button
+                  key={note.id || `note-${idx}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDrag={(e) => handleDrag(e)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  onClick={() => handleSelectNote(idx)}
+                  style={{
+                    backgroundColor: idx === currentNoteIdx ? activeStyle.selectedNote : undefined,
+                    cursor: draggedIdx === idx ? "grabbing" : "grab",
+                    opacity: draggedIdx === idx ? 0 : 1,
+                    transform: `translateY(${yOffset})`,
+                    // הפתרון: כשלא גוררים, מעבירים undefined כדי שה-CSS המקורי שלך יחזור לעבוד במלואו
+                    transition: draggedIdx !== null ? "transform 0.3s cubic-bezier(0.2, 1, 0.1, 1)" : undefined,
+                  }}
+                  className="note-button"
+                >
+                  {note?.title || `כותרת ${idx + 1}`}
+                </button>
+              );
+            })}
+
+            {/* --- הפתק המרחף באוויר (העיצוב המותאם) --- */}
+            {draggedIdx !== null && (
+              <div className="ghost-note" style={{
+                position: "fixed",
+                top: ghostPos.y, // הורדנו את ה "- 20" שהיה פה קודם
+                left: ghostPos.x,
+                width: ghostPos.w,
+                pointerEvents: "none",
+                zIndex: 9999,
+                background: activeStyle.selectedNote || "#ffffff",
+
+                // הוסף את השורה הזו:
+                transform: `scaleY(${ghostPos.scale || 1})`,
+              }}>
+                {notes[draggedIdx]?.title || `כותרת ${draggedIdx + 1}`}
+              </div>
+            )}
           </div>
+
           <button onClick={handleNewNote} className={`new-note-button ${notes.length >= 10 ? 'hidden' : ''}`} style={{ opacity: notes.length >= 10 ? '0' : '1' }}>+</button>
         </div>
-        
         {/* Editor */}
         <div className="container" style={{ flex: 1 }}>
           <div className="text_box">
@@ -435,21 +550,15 @@ export default function Home() {
             >
             </div>
           </div>
-          <TooltipWrapper text="מחק" shortcut="Control + R" color={activeStyle.tooltip}>
+          <TooltipWrapper text="מחק" shortcut="Control + 1" color={activeStyle.tooltip}>
             <button
-              onClick={() => {
-                if (notes.length > 1) {
-                  const newNotes = notes.filter((_, idx) => idx !== currentNoteIdx);
-                  setNotes(newNotes);
-                  setCurrentNoteIdx(Math.max(0, currentNoteIdx - 1));
-                }
-              }}
+              onClick={handleDeleteNote}
               className="delete-note-button"
               style={{ borderColor: activeStyle.baseColor }}
-              disabled={notes.length === 1}
+            // disabled={notes.length === 1}
             />
           </TooltipWrapper>
-          <TooltipWrapper text={activeStyle.name} shortcut="Control + Q" color={activeStyle.tooltip}>
+          <TooltipWrapper text={activeStyle.name} shortcut="Control + J" color={activeStyle.tooltip}>
             <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: activeStyle.baseColor }}></button>
           </TooltipWrapper>
         </div>

@@ -105,7 +105,7 @@ a {
   font-size: 1rem;
 
   /* word-spacing: 0px;  */
-  
+
 
   overflow: hidden;
   resize: none;
@@ -145,6 +145,16 @@ a {
   flex-direction: column;
   z-index: 1000;
   transition: transform 0.25s ease;
+}
+
+.ghost-note {
+  padding: 18px;
+  /* border: 1px solid #ccc; */
+  text-align: right;
+  color: #ffffff;
+  pointer-events: none;
+  font-size: 13.3333px;
+  backdrop-filter: blur(4px);
 }
 
 .new-note-button {
@@ -268,6 +278,8 @@ a {
   color: #A6A6A6;
   cursor: pointer;
   transition: all 0.2s ease;
+  background-color: #00000000;
+  /* transition: transform 0.3s cubic-bezier(0.2, 1, 0.1, 1), opacity 0.2s ease, background-color 0.2s ease; */
 }
 
 .note-button:hover {
@@ -294,11 +306,14 @@ a {
   position: absolute;
   border-radius: 50%;
   /* --- התיקון הויזואלי המרכזי --- */
-  filter: blur(200px); /* טשטוש מאסיבי מאוד ליצירת מעברים רכים */
-  will-change: filter, transform; /* אופטימיזציה לתנועה חלקה */
+  filter: blur(200px);
+  /* טשטוש מאסיבי מאוד ליצירת מעברים רכים */
+  will-change: filter, transform;
+  /* אופטימיזציה לתנועה חלקה */
   opacity: var(--glow-opacity);
   background-color: var(--base-color);
-  animation: float 35s ease-in-out infinite alternate; /* אנימציה איטית יותר */
+  animation: float 35s ease-in-out infinite alternate;
+  /* אנימציה איטית יותר */
 }
 
 /* כתם ראשון - צבע בסיס */
@@ -317,7 +332,8 @@ a {
   bottom: -5%;
   right: -5%;
   /* --- כוונון עדין של הגוונים --- */
-  filter: blur(180px) hue-rotate(30deg); /* סגול-עמוק יותר */
+  filter: blur(180px) hue-rotate(30deg);
+  /* סגול-עמוק יותר */
   animation-duration: 35s;
   animation-direction: alternate-reverse;
 }
@@ -329,14 +345,26 @@ a {
   top: 30%;
   left: 20%;
   /* --- כוונון עדין של הגוונים --- */
-  filter: blur(220px) hue-rotate(-20deg) brightness(1.2); /* תכלת יותר ומנצנץ */
+  filter: blur(220px) hue-rotate(-20deg) brightness(1.2);
+  /* תכלת יותר ומנצנץ */
   animation-duration: 40s;
 }
 
 /* אנימציה חלקה ועדינה יותר */
 @keyframes float {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(40px, 40px) scale(1); }
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(40px, 40px) scale(1);
+  }
 }
