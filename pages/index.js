@@ -55,7 +55,7 @@ export default function Home() {
 
   const placeholderSentences = [
     "כתוב כאן...",
-    "בוא נראה מה יש לך להגיד...",
+    "בוא נשמע מה יש לך להגיד...",
     "בוא נעשה בזה סדר...",
     "תראה מה אתה שווה..."
   ];
@@ -400,7 +400,7 @@ export default function Home() {
       // הפתק תמיד מעוגן ל-startX, אבל זז קצת לכיוון העכבר
       let newX = startX + (targetX - startX) * TENSION;
       // חישוב ההתכווצות: ככל שהמרחק (stretchDistance) גדול יותר, הפתק קטן יותר (מקסימום התכווצות ל-0.9)
-      const newScale = Math.max(0.8, 1 - (stretchDistance / 1000));
+      const newScale = Math.max(0.7, 1 - (stretchDistance / 1000));
 
       // שומרים גם את startX לסטייט כדי שהגומייה לא תאבד את מרכז הכובד שלה
       return { ...prev, startX, x: newX, y: newY, scale: newScale };
