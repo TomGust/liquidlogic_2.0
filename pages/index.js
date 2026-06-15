@@ -2,7 +2,7 @@ import Head from 'next/head';
 import { useRef, useState, useEffect } from "react";
 import TooltipWrapper from './api/TooltipWrapper';
 import AmbientBackground from './api/AmbientBackground';
-import DraggableNotesList from './api/DraggableNotesList';
+import MagneticWrapper from './api/MagneticWrapper';
 
 // הגדרת הסגנונות: כאן תוכל לשלוט בנוחות בכל הצבעים וההגדרות של שלושת המצבים
 const THEMES = [
@@ -551,15 +551,21 @@ export default function Home() {
             </div>
           </div>
           <TooltipWrapper text="מחק" shortcut="Control + 1" color={activeStyle.tooltip}>
-            <button
-              onClick={handleDeleteNote}
-              className="delete-note-button"
-              style={{ borderColor: activeStyle.baseColor }}
-            // disabled={notes.length === 1}
-            />
+            <MagneticWrapper pullRadius={35} strength={0.3}>
+
+              <button
+                onClick={handleDeleteNote}
+                className="delete-note-button"
+                style={{ borderColor: activeStyle.baseColor }}
+              // disabled={notes.length === 1}
+              />
+            </MagneticWrapper>
+
           </TooltipWrapper>
           <TooltipWrapper text={activeStyle.name} shortcut="Control + J" color={activeStyle.tooltip}>
-            <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: activeStyle.baseColor }}></button>
+            <MagneticWrapper pullRadius={35} strength={0.3}>
+              <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: activeStyle.baseColor }}></button>
+            </MagneticWrapper>
           </TooltipWrapper>
         </div>
       </div >
