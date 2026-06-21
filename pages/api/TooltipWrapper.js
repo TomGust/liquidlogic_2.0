@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const TooltipWrapper = ({ children, text, shortcut, color }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ left: 0, top: 0 });
   const childRef = useRef(null);
+  const timerRef = useRef(null);
 
   const handleMouseEnter = () => {
     const rect = childRef.current?.getBoundingClientRect();
@@ -13,25 +15,33 @@ const TooltipWrapper = ({ children, text, shortcut, color }) => {
       left: rect.left + rect.width / 2,
       top: rect.top - 10,
     });
-    setShowTooltip(true);
+
+    timerRef.current = setTimeout(() => {
+      setShowTooltip(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setVisible(true));
+      });
+    }, 1000);
   };
 
   const handleMouseLeave = () => {
-    setShowTooltip(false);
+    clearTimeout(timerRef.current);
+    setVisible(false);
+    setTimeout(() => setShowTooltip(false), 200); // מחכה לאנימציית ה-fade-out
   };
+
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current);
+  }, []);
 
   const child = React.cloneElement(children, {
     ref: childRef,
     onMouseEnter: (event) => {
-      if (children.props.onMouseEnter) {
-        children.props.onMouseEnter(event);
-      }
+      if (children.props.onMouseEnter) children.props.onMouseEnter(event);
       handleMouseEnter();
     },
     onMouseLeave: (event) => {
-      if (children.props.onMouseLeave) {
-        children.props.onMouseLeave(event);
-      }
+      if (children.props.onMouseLeave) children.props.onMouseLeave(event);
       handleMouseLeave();
     }
   });
@@ -48,7 +58,9 @@ const TooltipWrapper = ({ children, text, shortcut, color }) => {
           zIndex: 9999,
           pointerEvents: 'none',
           display: 'flex',
-          alignItems: 'flex-end'
+          alignItems: 'flex-end',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.2s ease',
         }}>
           <div style={{
             position: 'relative',
@@ -60,7 +72,6 @@ const TooltipWrapper = ({ children, text, shortcut, color }) => {
             <div style={{
               backgroundColor: color || '#304b27',
               color: '#ffffff',
-              //move right a bit
               marginLeft: '90px',
               padding: '0px 6px',
               fontSize: '17px',
@@ -68,7 +79,6 @@ const TooltipWrapper = ({ children, text, shortcut, color }) => {
               fontWeight: 500,
               direction: 'ltr',
               whiteSpace: 'nowrap',
-              // borderRadius: '10px',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'flex-end',
@@ -87,7 +97,6 @@ const TooltipWrapper = ({ children, text, shortcut, color }) => {
               fontSize: '11px',
               fontWeight: 600,
               fontFamily: 'Arial, sans-serif',
-              // borderRadius: '10px',
               boxShadow: '0 14px 35px rgba(0, 0, 0, 0.18)',
               whiteSpace: 'nowrap',
               direction: 'ltr'

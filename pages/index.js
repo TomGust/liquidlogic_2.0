@@ -4,20 +4,21 @@ import TooltipWrapper from './api/TooltipWrapper';
 import AmbientBackground from './api/AmbientBackground';
 import MagneticWrapper from './api/MagneticWrapper';
 
-// הגדרת הסגנונות: כאן תוכל לשלוט בנוחות בכל הצבעים וההגדרות של שלושת המצבים
 const THEMES = [
   {
-    name: "סדר",          // משתנה עם שם הסגנון
-    baseColor: "#3C552D",       // צבע בסיס (לזיהוי ולכפתור)
-    background: "#1A1A19",      // 1. צבע רקע
-    tooltip: "#3C552D",         // 2. צבע Tooltip
-    highlightText: "red",       // 3. צבע טקסט מודגש
-    icon: "#3C552D",            // 4. צבע הסמל שבפינה הימנית למעלה
-    selectedNote: "#292927bb",    // 5. צבע של פתק מסומן (וגם גבול הסרגל הצידי)
-    ambientColor: "blue",       // 6. צבע ה-AmbientBackground
-    ambientOpacity: 0           // 6. האופסיטי של ה-AmbientBackground
+    id: 0,
+    name: "סדר",
+    baseColor: "#3C552D",
+    background: "#1A1A19",
+    tooltip: "#3C552D",
+    highlightText: "red",
+    icon: "#3C552D",
+    selectedNote: "#292927bb",
+    ambientColor: "blue",
+    ambientOpacity: 0
   },
   {
+    id: 1,
     name: "רגוע",
     baseColor: "#004985",
     background: "#002930",
@@ -29,6 +30,7 @@ const THEMES = [
     ambientOpacity: 0.4
   },
   {
+    id: 2,
     name: "צבע",
     baseColor: "#c211aa",
     background: "#3f003c",
@@ -38,56 +40,74 @@ const THEMES = [
     selectedNote: "#c211aa44",
     ambientColor: "#d60064",
     ambientOpacity: 0.4
-  }
+  },
+  {
+    id: 3,
+    name: "קרח",
+    baseColor: "#ff6200",
+    background: "#a33f00",
+    tooltip: "#ff6200",
+    highlightText: "cyan",
+    icon: "#ff6200",
+    selectedNote: "#ff620044",
+    ambientColor: "#ffd900",
+    ambientOpacity: 0.2
+  },
 ];
+
+const placeholderSentences = [
+  "כתוב כאן...",
+  "בוא נשמע מה יש לך להגיד...",
+  "בוא נעשה בזה סדר...",
+  "תראה מה אתה שווה..."
+];
+
+const getRandomPlaceholder = () =>
+  placeholderSentences[Math.floor(Math.random() * placeholderSentences.length)];
+
+const createNewNote = (color) => ({
+  title: "",
+  content: "",
+  color: color || THEMES[0].baseColor,
+  placeholder: ""  // ← ריק תמיד, מוגדר רק ב-useEffect
+});
 
 export default function Home() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState('');
   const textRef = useRef(null);
   const [deleteline, setDeleteLine] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // הגדרת סגנון ראשוני
   const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor);
-
-  // איתור הסגנון הפעיל מתוך אובייקט ההגדרות
   const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
 
-  const placeholderSentences = [
-    "כתוב כאן...",
-    "בוא נשמע מה יש לך להגיד...",
-    "בוא נעשה בזה סדר...",
-    "תראה מה אתה שווה..."
-  ];
-
-  const getRandomPlaceholder = () =>
-    placeholderSentences[Math.floor(Math.random() * placeholderSentences.length)];
-
-  // פתקים
-  const [notes, setNotes] = useState([
-    { title: "", content: "", color: THEMES[0].baseColor, placeholder: getRandomPlaceholder() }
-  ]);
+  // ✅ פתק ראשוני בלי placeholder
+  const [notes, setNotes] = useState([createNewNote()]);
   const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
 
-  // קיצור מקלדת: Ctrl+B לצביעת טקסט, Ctrl+N לפתקים חדשים, Ctrl+S לשמירה (דוגמה)
+  // ✅ תיקון Hydration — placeholder מוגדר רק בקליינט אחרי mount
+  useEffect(() => {
+    setIsMounted(true);
+    setNotes(prev =>
+      prev.map(note => ({
+        ...note,
+        placeholder: note.placeholder || getRandomPlaceholder()
+      }))
+    );
+  }, []);
+
+  // קיצורי מקלדת
   useEffect(() => {
     const handleShortcut = (e) => {
-      // Ctrl+y - צבע טקסט
-      // if (e.key === 'Alt') {
-      //   e.preventDefault();
-      //   colorSelectedText();
-      // }
-      // Ctrl+q - פתק חדש
       if (e.ctrlKey && e.code === 'KeyQ') {
         e.preventDefault();
         handleNewNote();
       }
-      // Ctrl+j - החלפת צבע פתק
       if (e.ctrlKey && e.code === 'KeyJ') {
         e.preventDefault();
         cycleNoteColor();
       }
-      // Ctrl+1 - מחיקת פתק נוכחי
       if (e.ctrlKey && (e.code === 'Digit1' || e.code === 'Numpad1')) {
         e.preventDefault();
         handleDeleteNote();
@@ -99,17 +119,12 @@ export default function Home() {
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      // אם רוצים להראות הודעה מותאמת, חייבים להגדיר returnValue
       e.preventDefault();
       e.returnValue = "האם אתה בטוח שאתה רוצה לסגור את החלון?";
       return "האם אתה בטוח שאתה רוצה לסגור את החלון?";
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
   useEffect(() => {
@@ -118,11 +133,11 @@ export default function Home() {
     }
   }, []);
 
-  // עדכון פתק נוכחי
+  // עדכון תצוגה בעת מעבר בין פתקים
   useEffect(() => {
     setTitle(notes[currentNoteIdx]?.title || "");
     setContent(notes[currentNoteIdx]?.content || "");
-    setSelectedNoteColor(notes[currentNoteIdx]?.color || "red");
+    setSelectedNoteColor(notes[currentNoteIdx]?.color || THEMES[0].baseColor);
     if (textRef.current) {
       textRef.current.innerHTML = notes[currentNoteIdx]?.content || "";
     }
@@ -210,8 +225,6 @@ export default function Home() {
       const bulletMatch = currentLine.match(/^\s*(•)\s/);
       const orderedMatch = currentLine.match(/^\s*(\d+)\.\s/);
 
-      const sel = window.getSelection();
-      const node1 = sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
       if (deleteline) {
         setDeleteLine(false);
         return;
@@ -219,7 +232,6 @@ export default function Home() {
 
       if (currentLine.trim() === '') return;
 
-      // --- לוגיקה ליציאה מרשימה (נשארת כמעט זהה) ---
       if (currentLine.trim() === '•' || currentLine.trim().match(/^\d+\.$/)) {
         e.preventDefault();
         const delRange = document.createRange();
@@ -231,7 +243,6 @@ export default function Home() {
         return;
       }
 
-      // --- לוגיקה להמשך רשימה (החלק שתוקן) ---
       if (bulletMatch) {
         e.preventDefault();
         document.execCommand('insertLineBreak');
@@ -250,18 +261,15 @@ export default function Home() {
     if (!selection.isCollapsed) {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
-      span.style.color = activeStyle.highlightText; // נשאב ישירות מהגדרות הסגנון
+      span.style.color = activeStyle.highlightText;
       span.textContent = selection.toString();
-
       range.deleteContents();
       range.insertNode(span);
-
       selection.removeAllRanges();
       if (textRef.current) setContent(textRef.current.innerHTML);
     }
   };
 
-  // שמירת פתק נוכחי
   const saveCurrentNote = () => {
     setNotes((prev) => {
       const updated = [...prev];
@@ -271,23 +279,20 @@ export default function Home() {
         content,
         color: selectedNoteColor
       };
-
       return updated;
     });
   };
 
-  // יצירת פתק חדש
   const handleNewNote = () => {
-    if (notes.length >= 10) return; // הגבלה ל-10 פתקים
+    if (notes.length >= 10) return;
     saveCurrentNote();
-    setNotes((prev) => [
-      ...prev,
-      { title: "", content: "", color: THEMES[0].baseColor, placeholder: getRandomPlaceholder() }
-    ]);
+    const newNote = createNewNote(THEMES[0].baseColor);
+    // ✅ placeholder מוגדר מיד כי אנחנו בקליינט
+    newNote.placeholder = getRandomPlaceholder();
+    setNotes((prev) => [...prev, newNote]);
     setCurrentNoteIdx(notes.length);
   };
 
-  // מחיקת פתק נוכחי
   const handleDeleteNote = () => {
     if (notes.length > 1) {
       const newNotes = notes.filter((_, idx) => idx !== currentNoteIdx);
@@ -296,21 +301,17 @@ export default function Home() {
     }
   };
 
-  // החלפת צבע בלחיצה (לפי המערך שלנו)
   const cycleNoteColor = () => {
-    // קודם נשמור את תוכן הפתק הנוכחי
     const editor = textRef.current;
     if (editor) {
       setContent(editor.innerHTML);
     }
 
-    // עדכון הצבע בהתאם למערך הסגנונות הדינמי
     const colors = THEMES.map(t => t.baseColor);
     const currentIndex = colors.indexOf(selectedNoteColor);
     const nextColor = colors[(currentIndex + 1) % colors.length];
     setSelectedNoteColor(nextColor);
 
-    // עדכון הפתק כולל תוכן מעודכן
     setNotes((prev) => {
       const updated = [...prev];
       updated[currentNoteIdx] = {
@@ -322,7 +323,6 @@ export default function Home() {
     });
   };
 
-  // מעבר לפתק אחר
   const handleSelectNote = (idx) => {
     saveCurrentNote();
     setCurrentNoteIdx(idx);
@@ -338,7 +338,6 @@ export default function Home() {
     });
   };
 
-  // סטייטים לניהול הגרירה והאנימציות
   const [draggedIdx, setDraggedIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [ghostPos, setGhostPos] = useState({ y: 0, x: 0, w: 0 });
@@ -350,59 +349,37 @@ export default function Home() {
 
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
-    const offsetX = e.clientX - rect.left; // חישוב מיקום העכבר על ציר ה-X בתוך הפתק
+    const offsetX = e.clientX - rect.left;
 
-    setGhostPos({
-      y: rect.top,
-      x: rect.left,
-      w: rect.width,
-      offsetX: offsetX, // שומרים את זה בסטייט
-      offsetY: offsetY
-    });
-
+    setGhostPos({ y: rect.top, x: rect.left, w: rect.width, offsetX, offsetY });
     setDraggedIdx(idx);
     setDragOverIdx(idx);
-
-    // השורה שנוספה: בוחרת את הפתק מיד עם תחילת הגרירה
     setCurrentNoteIdx(idx);
   };
 
   const handleDrag = (e) => {
-    // מונע קפיצה מוזרה של הדפדפן ברגע שמשחררים את העכבר
     if (e.clientY === 0 && e.clientX === 0) return;
 
     setGhostPos(prev => {
-
-
-      // טריק ששומר את נקודת ההתחלה של X בפעם הראשונה בלי שנצטרך לשנות פונקציות אחרות
       const startX = prev.startX ?? prev.x;
-
-      const targetY = e.clientY - prev.offsetY; // לאן העכבר רוצה ללכת ב-Y
-      const targetX = e.clientX - prev.offsetX; // לאן העכבר רוצה ללכת ב-X
-
-      // חישוב כמה הפתק "מתוח" בסך הכל מהנקודה המקורית (מרחק אווקלידי)
+      const targetY = e.clientY - prev.offsetY;
+      const targetX = e.clientX - prev.offsetX;
       const stretchDistance = Math.sqrt(Math.pow(targetX - startX, 2) + Math.pow(targetY - prev.y, 2));
 
       const MIN_Y = 60;
-      const MAX_Y = notes.length * 45 + 35; // גובה דינמי לפי מספר הפתקים (60 זה גובה משוער של פתק כולל מרווח)
-      const TENSION = 0.05; // "כוח ההתנגדות" של הגומייה. 0.15 אומר שהפתק זז רק 15% מהמרחק האמיתי של העכבר
+      const MAX_Y = notes.length * 45 + 35;
+      const TENSION = 0.05;
 
       let newY = targetY;
-
-      // 1. אפקט גומייה בגבולות של הגובה (Y)
       if (targetY < MIN_Y) {
-        newY = MIN_Y - (MIN_Y - targetY) * TENSION; // נמתח קצת למעלה
+        newY = MIN_Y - (MIN_Y - targetY) * TENSION;
       } else if (targetY > MAX_Y) {
-        newY = MAX_Y + (targetY - MAX_Y) * TENSION; // נמתח קצת למטה
+        newY = MAX_Y + (targetY - MAX_Y) * TENSION;
       }
 
-      // 2. אפקט גומייה לצדדים (X)
-      // הפתק תמיד מעוגן ל-startX, אבל זז קצת לכיוון העכבר
       let newX = startX + (targetX - startX) * TENSION;
-      // חישוב ההתכווצות: ככל שהמרחק (stretchDistance) גדול יותר, הפתק קטן יותר (מקסימום התכווצות ל-0.9)
       const newScale = Math.max(0.7, 1 - (stretchDistance / 1000));
 
-      // שומרים גם את startX לסטייט כדי שהגומייה לא תאבד את מרכז הכובד שלה
       return { ...prev, startX, x: newX, y: newY, scale: newScale };
     });
   };
@@ -410,20 +387,17 @@ export default function Home() {
   const handleDragOver = (e, idx) => {
     e.preventDefault();
     if (dragOverIdx !== idx) {
-      setDragOverIdx(idx); // עדכון האינדקס שאנחנו מרחפים מעליו כרגע
+      setDragOverIdx(idx);
     }
   };
 
   const handleDragEnd = () => {
-    // מוודא שבאמת גררנו פתק למיקום חדש
     if (draggedIdx !== null && dragOverIdx !== null && draggedIdx !== dragOverIdx) {
       const newNotes = [...notes];
       const item = newNotes.splice(draggedIdx, 1)[0];
       newNotes.splice(dragOverIdx, 0, item);
-
       setNotes(newNotes);
 
-      // מעדכן את המיקום של הפתק המסומן (הכחול) כדי שלא יברח כשהסדר משתנה
       if (currentNoteIdx === draggedIdx) {
         setCurrentNoteIdx(dragOverIdx);
       } else if (draggedIdx < currentNoteIdx && dragOverIdx >= currentNoteIdx) {
@@ -433,9 +407,18 @@ export default function Home() {
       }
     }
 
-    // איפוס הסטייטים בסיום
     setDraggedIdx(null);
     setDragOverIdx(null);
+  };
+
+  // חישוב הסגנון הבא לטולטיפ
+  //לא פעיל כרגע
+  const nextTheme = () => {
+    const colors = THEMES.map(t => t.baseColor);
+    const next = THEMES[(colors.indexOf(selectedNoteColor) + 1) % THEMES.length];
+    // return `${activeStyle.name} ← ${next.name}`;
+    return `${activeStyle.name}`;
+
   };
 
   return (
@@ -457,7 +440,6 @@ export default function Home() {
         ></div>
 
         {/* Sidebar */}
-
         <div className="sidebar" style={{
           borderColor: activeStyle.selectedNote,
           transition: "background-color 0.5s ease",
@@ -465,21 +447,18 @@ export default function Home() {
           <div className="perent-icon">
             <div className="icon">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path fill={activeStyle.icon} d="M5.4 19.6C4.65 18.85 4.0625 17.9833 3.6375 17C3.2125 16.0167 3 15 3 13.95C3 12.9 3.2 11.8625 3.6 10.8375C4 9.8125 4.65 8.85 5.55 7.95C6.13333 7.36666 6.85417 6.86666 7.7125 6.45C8.57083 6.03333 9.5875 5.70416 10.7625 5.4625C11.9375 5.22083 13.2792 5.075 14.7875 5.025C16.2958 4.975 17.9833 5.03333 19.85 5.2C19.9833 6.96666 20.025 8.59166 19.975 10.075C19.925 11.5583 19.7875 12.8958 19.5625 14.0875C19.3375 15.2792 19.0208 16.3208 18.6125 17.2125C18.2042 18.1042 17.7 18.85 17.1 19.45C16.2167 20.3333 15.2792 20.9792 14.2875 21.3875C13.2958 21.7958 12.2833 22 11.25 22C10.1667 22 9.10833 21.7875 8.075 21.3625C7.04167 20.9375 6.15 20.35 5.4 19.6ZM8.2 19.2C8.68333 19.4833 9.17917 19.6875 9.6875 19.8125C10.1958 19.9375 10.7167 20 11.25 20C12.0167 20 12.775 19.8458 13.525 19.5375C14.275 19.2292 14.9917 18.7333 15.675 18.05C15.975 17.75 16.2792 17.3292 16.5875 16.7875C16.8958 16.2458 17.1625 15.5375 17.3875 14.6625C17.6125 13.7875 17.7833 12.7292 17.9 11.4875C18.0167 10.2458 18.0333 8.76666 17.95 7.05C17.1333 7.01666 16.2125 7.00416 15.1875 7.0125C14.1625 7.02083 13.1417 7.1 12.125 7.25C11.1083 7.4 10.1417 7.64166 9.225 7.975C8.30833 8.30833 7.55833 8.76666 6.975 9.35C6.225 10.1 5.70833 10.8417 5.425 11.575C5.14167 12.3083 5 13.0167 5 13.7C5 14.6833 5.1875 15.5458 5.5625 16.2875C5.9375 17.0292 6.26667 17.55 6.55 17.85C7.25 16.5167 8.175 15.2375 9.325 14.0125C10.475 12.7875 11.8167 11.7833 13.35 11C12.15 12.05 11.1042 13.2375 10.2125 14.5625C9.32083 15.8875 8.65 17.4333 8.2 19.2Z'/>" />
+                <path fill={activeStyle.icon} d="M5.4 19.6C4.65 18.85 4.0625 17.9833 3.6375 17C3.2125 16.0167 3 15 3 13.95C3 12.9 3.2 11.8625 3.6 10.8375C4 9.8125 4.65 8.85 5.55 7.95C6.13333 7.36666 6.85417 6.86666 7.7125 6.45C8.57083 6.03333 9.5875 5.70416 10.7625 5.4625C11.9375 5.22083 13.2792 5.075 14.7875 5.025C16.2958 4.975 17.9833 5.03333 19.85 5.2C19.9833 6.96666 20.025 8.59166 19.975 10.075C19.925 11.5583 19.7875 12.8958 19.5625 14.0875C19.3375 15.2792 19.0208 16.3208 18.6125 17.2125C18.2042 18.1042 17.7 18.85 17.1 19.45C16.2167 20.3333 15.2792 20.9792 14.2875 21.3875C13.2958 21.7958 12.2833 22 11.25 22C10.1667 22 9.10833 21.7875 8.075 21.3625C7.04167 20.9375 6.15 20.35 5.4 19.6ZM8.2 19.2C8.68333 19.4833 9.17917 19.6875 9.6875 19.8125C10.1958 19.9375 10.7167 20 11.25 20C12.0167 20 12.775 19.8458 13.525 19.5375C14.275 19.2292 14.9917 18.7333 15.675 18.05C15.975 17.75 16.2792 17.3292 16.5875 16.7875C16.8958 16.2458 17.1625 15.5375 17.3875 14.6625C17.6125 13.7875 17.7833 12.7292 17.9 11.4875C18.0167 10.2458 18.0333 8.76666 17.95 7.05C17.1333 7.01666 16.2125 7.00416 15.1875 7.0125C14.1625 7.02083 13.1417 7.1 12.125 7.25C11.1083 7.4 10.1417 7.64166 9.225 7.975C8.30833 8.30833 7.55833 8.76666 6.975 9.35C6.225 10.1 5.70833 10.8417 5.425 11.575C5.14167 12.3083 5 13.0167 5 13.7C5 14.6833 5.1875 15.5458 5.5625 16.2875C5.9375 17.0292 6.26667 17.55 6.55 17.85C7.25 16.5167 8.175 15.2375 9.325 14.0125C10.475 12.7875 11.8167 11.7833 13.35 11C12.15 12.05 11.1042 13.2375 10.2125 14.5625C9.32083 15.8875 8.65 17.4333 8.2 19.2Z" />
               </svg>
             </div>
           </div>
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", position: "relative" }}>
             {notes.map((note, idx) => {
-              // --- חישוב האנימציה עבור כל פתק בזמן הגרירה ---
               let yOffset = "0px";
               if (draggedIdx !== null && dragOverIdx !== null && idx !== draggedIdx) {
                 if (draggedIdx < dragOverIdx && idx > draggedIdx && idx <= dragOverIdx) {
-                  // גוררים למטה: הפתקים באמצע מחליקים למעלה (מפנים מקום)
                   yOffset = "-100%";
                 } else if (draggedIdx > dragOverIdx && idx < draggedIdx && idx >= dragOverIdx) {
-                  // גוררים למעלה: הפתקים באמצע מחליקים למטה
                   yOffset = "100%";
                 }
               }
@@ -498,7 +477,6 @@ export default function Home() {
                     cursor: draggedIdx === idx ? "grabbing" : "grab",
                     opacity: draggedIdx === idx ? 0 : 1,
                     transform: `translateY(${yOffset})`,
-                    // הפתרון: כשלא גוררים, מעבירים undefined כדי שה-CSS המקורי שלך יחזור לעבוד במלואו
                     transition: draggedIdx !== null ? "transform 0.3s cubic-bezier(0.2, 1, 0.1, 1)" : undefined,
                   }}
                   className="note-button"
@@ -508,18 +486,15 @@ export default function Home() {
               );
             })}
 
-            {/* --- הפתק המרחף באוויר (העיצוב המותאם) --- */}
             {draggedIdx !== null && (
               <div className="ghost-note" style={{
                 position: "fixed",
-                top: ghostPos.y, // הורדנו את ה "- 20" שהיה פה קודם
+                top: ghostPos.y,
                 left: ghostPos.x,
                 width: ghostPos.w,
                 pointerEvents: "none",
                 zIndex: 9999,
                 background: activeStyle.selectedNote || "#ffffff",
-
-                // הוסף את השורה הזו:
                 transform: `scaleY(${ghostPos.scale || 1})`,
               }}>
                 {notes[draggedIdx]?.title || `כותרת ${draggedIdx + 1}`}
@@ -527,8 +502,13 @@ export default function Home() {
             )}
           </div>
 
-          <button onClick={handleNewNote} className={`new-note-button ${notes.length >= 10 ? 'hidden' : ''}`} style={{ opacity: notes.length >= 10 ? '0' : '1' }}>+</button>
+          <button
+            onClick={handleNewNote}
+            className={`new-note-button ${notes.length >= 10 ? 'hidden' : ''}`}
+            style={{ opacity: notes.length >= 10 ? '0' : '1' }}
+          >+</button>
         </div>
+
         {/* Editor */}
         <div className="container" style={{ flex: 1 }}>
           <div className="text_box">
@@ -539,6 +519,7 @@ export default function Home() {
               onChange={handleTitleChange}
               placeholder="כותרת"
             />
+            {/* ✅ placeholder מוצג רק אחרי mount כדי למנוע hydration mismatch */}
             <div
               className={`textarea_content ${content.length === 0 ? 'is-empty' : ''}`}
               contentEditable={true}
@@ -546,29 +527,35 @@ export default function Home() {
               onPaste={handlePaste}
               onKeyDown={handleKeyDown}
               ref={textRef}
-              data-placeholder={notes[currentNoteIdx]?.placeholder || "כתוב כאן..."}
+              data-placeholder={isMounted ? (notes[currentNoteIdx]?.placeholder || "כתוב כאן...") : ""}
             >
             </div>
           </div>
+
           <TooltipWrapper text="מחק" shortcut="Control + 1" color={activeStyle.tooltip}>
             <MagneticWrapper pullRadius={35} strength={0.3}>
-
               <button
                 onClick={handleDeleteNote}
                 className="delete-note-button"
                 style={{ borderColor: activeStyle.baseColor }}
-              // disabled={notes.length === 1}
               />
             </MagneticWrapper>
-
           </TooltipWrapper>
-          <TooltipWrapper text={activeStyle.name} shortcut="Control + J" color={activeStyle.tooltip}>
+
+          <TooltipWrapper text={nextTheme()} shortcut="Control + J" color={activeStyle.tooltip}>
             <MagneticWrapper pullRadius={35} strength={0.3}>
-              <button onClick={cycleNoteColor} className="change-note-color-button" style={{ backgroundColor: activeStyle.baseColor }}></button>
+              <button
+                onClick={cycleNoteColor}
+                className="change-note-color-button"
+                style={{
+                  '--base-color': activeStyle.baseColor,
+                  '--active-color': THEMES[(activeStyle.id + 1) % THEMES.length].baseColor
+                }}
+              />
             </MagneticWrapper>
           </TooltipWrapper>
         </div>
-      </div >
+      </div>
     </>
   );
 }

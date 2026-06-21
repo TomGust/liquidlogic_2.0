@@ -230,6 +230,7 @@ a {
   left: 90px;
   border: none;
   transition: all 0.2s ease-out;
+  background-color: var(--base-color);
 }
 
 .change-note-color-button:hover {
@@ -239,6 +240,8 @@ a {
 .change-note-color-button:active {
   transform: scale(0.8);
   rotate: 20deg;
+  background-color: var(--active-color);
+  
 }
 
 .perent-icon {
