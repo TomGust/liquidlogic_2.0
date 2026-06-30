@@ -7,7 +7,7 @@ import MagneticWrapper from './api/MagneticWrapper';
 const THEMES = [
   {
     id: 0,
-    name: "סדר",
+    name: "צבא",
     baseColor: "#3C552D",
     background: "#1A1A19",
     tooltip: "#3C552D",
@@ -17,21 +17,21 @@ const THEMES = [
     ambientColor: "blue",
     ambientOpacity: 0
   },
-  {
-    id: 1,
-    name: "רגוע",
-    baseColor: "#004985",
-    background: "#002930",
-    tooltip: "#003764",
-    highlightText: "blue",
-    icon: "#004985",
-    selectedNote: "#003764b4",
-    ambientColor: "blue",
-    ambientOpacity: 0.4
-  },
+  // {
+  //   id: 1,
+  //   name: "רגוע",
+  //   baseColor: "#004985",
+  //   background: "#002930",
+  //   tooltip: "#003764",
+  //   highlightText: "blue",
+  //   icon: "#004985",
+  //   selectedNote: "#003764b4",
+  //   ambientColor: "blue",
+  //   ambientOpacity: 0.4
+  // },
   {
     id: 2,
-    name: "צבע",
+    name: "רומטי",
     baseColor: "#c211aa",
     background: "#3f003c",
     tooltip: "#c211aa",
@@ -43,7 +43,7 @@ const THEMES = [
   },
   {
     id: 3,
-    name: "קרח",
+    name: "bgu",
     baseColor: "#ff6200",
     background: "#a33f00",
     tooltip: "#ff6200",
@@ -52,6 +52,18 @@ const THEMES = [
     selectedNote: "#ff620044",
     ambientColor: "#ffd900",
     ambientOpacity: 0.2
+  },
+    {
+    id: 3,
+    name: "יוון",
+    baseColor: "#643200",
+    background: "#003f69",
+    tooltip: "#0ab7fc",
+    highlightText: "cyan",
+    icon: "#0ab7fc",
+    selectedNote: "#6432007e",
+    ambientColor: "#7fb839",
+    ambientOpacity: 0.8
   },
 ];
 
@@ -252,6 +264,22 @@ export default function Home() {
         const nextNumber = parseInt(orderedMatch[1], 10) + 1;
         document.execCommand('insertLineBreak');
         document.execCommand('insertText', false, `${nextNumber}. `);
+      }
+    }
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (textRef.current) {
+        textRef.current.focus();
+        // מציב סמן בסוף התוכן הקיים
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(textRef.current);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
       }
     }
   };
@@ -518,6 +546,8 @@ export default function Home() {
               value={title}
               onChange={handleTitleChange}
               placeholder="כותרת"
+              onKeyDown={handleTitleKeyDown}
+
             />
             {/* ✅ placeholder מוצג רק אחרי mount כדי למנוע hydration mismatch */}
             <div
