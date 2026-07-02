@@ -208,12 +208,18 @@ a {
   border-radius: 50%;
   position: absolute;
   bottom: 30px;
-  left: 40px;
-  transition: all 0.2s ease-out;
+  /* left: 40px; */
+  left: var(--x-position);
+  transition: all 0.2s ease-out, left 1s cubic-bezier(1, 0, 0, 1);
+}
+
+.textarea_content .highlighted-text {
+  color: var(--highlight-color);
 }
 
 .delete-note-button:hover {
   border-radius: 0%;
+  background-color: rgba(77, 0, 0, 0.616);
 }
 
 .delete-note-button:active {
@@ -227,9 +233,10 @@ a {
   border-radius: 50%;
   position: absolute;
   bottom: 30px;
-  left: 90px;
+  left: var(--x-position);
+  /* left: 90px + var(--x-position); */
   border: none;
-  transition: all 0.2s ease-out;
+  transition: all 0.2s ease-out, left 1s cubic-bezier(1, 0, 0, 1);
   background-color: var(--base-color);
 }
 
@@ -240,8 +247,8 @@ a {
 .change-note-color-button:active {
   transform: scale(0.8);
   rotate: 20deg;
-  background-color: var(--active-color);
-  
+  /* background-color: var(--active-color); */
+
 }
 
 .perent-icon {

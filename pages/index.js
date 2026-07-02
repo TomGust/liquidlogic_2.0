@@ -11,31 +11,31 @@ const THEMES = [
     baseColor: "#3C552D",
     background: "#1A1A19",
     tooltip: "#3C552D",
-    highlightText: "red",
+    highlightText: "#7bb459",
     icon: "#3C552D",
     selectedNote: "#292927bb",
     ambientColor: "blue",
     ambientOpacity: 0
   },
-  // {
-  //   id: 1,
-  //   name: "רגוע",
-  //   baseColor: "#004985",
-  //   background: "#002930",
-  //   tooltip: "#003764",
-  //   highlightText: "blue",
-  //   icon: "#004985",
-  //   selectedNote: "#003764b4",
-  //   ambientColor: "blue",
-  //   ambientOpacity: 0.4
-  // },
+  {
+    id: 1,
+    name: "רגוע",
+    baseColor: "#004985",
+    background: "#00253B",
+    tooltip: "#003764",
+    highlightText: "#3ea8ff",
+    icon: "#004985",
+    selectedNote: "#00396a96",
+    ambientColor: "#0037FF",
+    ambientOpacity: 0.4
+  },
   {
     id: 2,
     name: "רומטי",
     baseColor: "#c211aa",
     background: "#3f003c",
     tooltip: "#c211aa",
-    highlightText: "green",
+    highlightText: "#ff70ec",
     icon: "#c211aa",
     selectedNote: "#c211aa44",
     ambientColor: "#d60064",
@@ -47,24 +47,24 @@ const THEMES = [
     baseColor: "#ff6200",
     background: "#a33f00",
     tooltip: "#ff6200",
-    highlightText: "cyan",
+    highlightText: "#ffad32",
     icon: "#ff6200",
     selectedNote: "#ff620044",
     ambientColor: "#ffd900",
     ambientOpacity: 0.2
   },
-    {
-    id: 3,
-    name: "יוון",
-    baseColor: "#643200",
-    background: "#003f69",
-    tooltip: "#0ab7fc",
-    highlightText: "cyan",
-    icon: "#0ab7fc",
-    selectedNote: "#6432007e",
-    ambientColor: "#7fb839",
-    ambientOpacity: 0.8
-  },
+  // {
+  //   id: 3,
+  //   name: "יוון",
+  //   baseColor: "#643200",
+  //   background: "#003f69",
+  //   tooltip: "#0ab7fc",
+  //   highlightText: "cyan",
+  //   icon: "#0ab7fc",
+  //   selectedNote: "#6432007e",
+  //   ambientColor: "#7fb839",
+  //   ambientOpacity: 0.8
+  // },
 ];
 
 const placeholderSentences = [
@@ -91,6 +91,9 @@ export default function Home() {
   const [deleteline, setDeleteLine] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
+  // ✅ מצב "טקסט מסומן" - נדלק כשמסמנים טקסט בתוך ה-editor, ונכבה כשמפסיקים לסמן
+  const [isTextSelected, setIsTextSelected] = useState(false);
+
   const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor);
   const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
 
@@ -109,6 +112,29 @@ export default function Home() {
     );
   }, []);
 
+  // ✅ מעקב אחרי בחירת טקסט בתוך ה-editor (textarea_content)
+  // selectionchange נורה בכל שינוי בבחירה במסמך כולו, אז בודקים שהבחירה
+  // אכן נמצאת בתוך ה-editor ושאינה ריקה (collapsed)
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      const editor = textRef.current;
+
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed || !editor) {
+        setIsTextSelected(false);
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      const isInsideEditor = editor.contains(range.commonAncestorContainer);
+
+      setIsTextSelected(isInsideEditor);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
   // קיצורי מקלדת
   useEffect(() => {
     const handleShortcut = (e) => {
@@ -118,16 +144,24 @@ export default function Home() {
       }
       if (e.ctrlKey && e.code === 'KeyJ') {
         e.preventDefault();
-        cycleNoteColor();
+        if (isTextSelected) {
+          colorSelectedText();
+        } else {
+          cycleNoteColor();
+        }
       }
       if (e.ctrlKey && (e.code === 'Digit1' || e.code === 'Numpad1')) {
         e.preventDefault();
-        handleDeleteNote();
+        if (isTextSelected) {
+          clearSelectedTextStyle();
+        } else {
+          handleDeleteNote();
+        }
       }
     };
     window.addEventListener('keydown', handleShortcut);
     return () => window.removeEventListener('keydown', handleShortcut);
-  }, [activeStyle, notes, currentNoteIdx]);
+  }, [activeStyle, notes, currentNoteIdx, isTextSelected]);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -153,6 +187,8 @@ export default function Home() {
     if (textRef.current) {
       textRef.current.innerHTML = notes[currentNoteIdx]?.content || "";
     }
+    // מעבר בין פתקים מבטל בחירת טקסט קודמת
+    setIsTextSelected(false);
   }, [currentNoteIdx, notes]);
 
   const normalizeEditorHtml = (html) => {
@@ -284,19 +320,99 @@ export default function Home() {
     }
   };
 
+  // ✅ "שינוי סגנון" בזמן שטקסט מסומן → מדגיש את הטקסט הנבחר.
+  // הצבע עצמו לא נקבע כאן ישירות (inline style), אלא באמצעות class + CSS variable
+  // (--highlight-color) שמוגדר על ה-editor. כך הצבע תמיד עוקב אחרי הסגנון הפעיל,
+  // גם על הדגשות שנוצרו בעבר.
   const colorSelectedText = () => {
     const selection = window.getSelection();
-    if (!selection.isCollapsed) {
+    if (selection && !selection.isCollapsed && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       const span = document.createElement('span');
-      span.style.color = activeStyle.highlightText;
+      span.className = 'highlighted-text';
       span.textContent = selection.toString();
       range.deleteContents();
       range.insertNode(span);
       selection.removeAllRanges();
       if (textRef.current) setContent(textRef.current.innerHTML);
+      setIsTextSelected(false);
     }
   };
+
+const clearSelectedTextStyle = () => {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+
+  const editor = textRef.current;
+  if (!editor) return;
+
+  const range = selection.getRangeAt(0);
+
+  // מפצל את ה-span שגבול הבחירה (start/end) נמצא באמצעו,
+  // כך שהגבול ייפול בדיוק על גבול של span ולא בתוכו
+  const splitAtBoundary = (container, offset) => {
+    if (container.nodeType !== Node.TEXT_NODE) return;
+
+    let node = container;
+    if (offset > 0 && offset < node.length) {
+      node = node.splitText(offset); // node = החלק שמתחיל בדיוק בגבול
+    } else if (offset === 0) {
+      node = container;
+    } else {
+      return; // הגבול כבר בסוף הטקסט, אין מה לפצל
+    }
+
+    // מטפס למעלה ומפצל כל span.highlighted-text אבא, כל עוד הגבול באמצעו
+    let current = node;
+    let parent = current.parentNode;
+    while (parent && parent !== editor && parent.classList?.contains('highlighted-text')) {
+      const clone = parent.cloneNode(false); // span ריק עם אותו class
+      let n = current;
+      while (n) {
+        const next = n.nextSibling;
+        clone.appendChild(n);
+        n = next;
+      }
+      parent.parentNode.insertBefore(clone, parent.nextSibling);
+      current = clone;
+      parent = clone.parentNode;
+    }
+  };
+
+  // חשוב: מפצלים קודם את הסוף, כדי שהפיצול בהתחלה לא ישבש את ה-offset של הסוף
+  // (רלוונטי בעיקר כששניהם באותו טקסט node)
+  const endContainer = range.endContainer;
+  const endOffset = range.endOffset;
+  const startContainer = range.startContainer;
+  const startOffset = range.startOffset;
+
+  splitAtBoundary(endContainer, endOffset);
+  splitAtBoundary(startContainer, startOffset);
+
+  // אחרי הפיצול, יוצרים מחדש Range נקי מ-start עד end (לפי אותם containers/offsets המקוריים,
+  // שעדיין תקפים כי splitText לא הזיז את הצמתים המקוריים, רק הוסיף חדשים אחריהם)
+  const cleanRange = document.createRange();
+  cleanRange.setStart(startContainer, Math.min(startOffset, startContainer.length ?? startOffset));
+  cleanRange.setEnd(endContainer, Math.min(endOffset, endContainer.length ?? endOffset));
+
+  // עכשיו כל span.highlighted-text שנחתך על ידי הבחירה חייב להיות *לגמרי* בתוכה
+  // (כי פיצלנו בדיוק על הגבולות) - אז פשוט מפרקים אותו
+  const spans = editor.querySelectorAll('span.highlighted-text');
+  spans.forEach((span) => {
+    if (cleanRange.intersectsNode(span)) {
+      const parent = span.parentNode;
+      while (span.firstChild) {
+        parent.insertBefore(span.firstChild, span);
+      }
+      parent.removeChild(span);
+    }
+  });
+
+  editor.normalize();
+  selection.removeAllRanges();
+  setContent(editor.innerHTML);
+  setIsTextSelected(false);
+};
 
   const saveCurrentNote = () => {
     setNotes((prev) => {
@@ -549,9 +665,14 @@ export default function Home() {
               onKeyDown={handleTitleKeyDown}
 
             />
-            {/* ✅ placeholder מוצג רק אחרי mount כדי למנוע hydration mismatch */}
+            {/*
+              ✅ placeholder מוצג רק אחרי mount כדי למנוע hydration mismatch.
+              ✅ --highlight-color מוגדר כאן ומועבר ל-.highlighted-text ב-CSS,
+              כך שכל טקסט מודגש עוקב אוטומטית אחרי צבע ה-highlight של הסגנון הפעיל.
+            */}
             <div
-              className={`textarea_content ${content.length === 0 ? 'is-empty' : ''}`}
+              className={`textarea_content ${content.length === 0 ? 'is-empty' : ''} ${isTextSelected ? 'has-selection' : ''}`}
+              style={{ '--highlight-color': activeStyle.highlightText }}
               contentEditable={true}
               onInput={handleInput}
               onPaste={handlePaste}
@@ -562,24 +683,46 @@ export default function Home() {
             </div>
           </div>
 
-          <TooltipWrapper text="מחק" shortcut="Control + 1" color={activeStyle.tooltip}>
+          {/*
+            ✅ שני הכפתורים הקיימים משנים את היעוד שלהם בזמן שטקסט מסומן:
+            - כפתור ה"מחק" → מחזיר את הטקסט המסומן בלבד לעיצוב המקורי (מסיר הדגשה)
+            - כפתור ה"שינוי סגנון" → מדגיש את הטקסט המסומן
+            כשהבחירה מתבטלת, שני הכפתורים חוזרים אוטומטית להתנהגות המקורית שלהם.
+          */}
+          <TooltipWrapper
+            text={isTextSelected ? "ניקוי" : "מחק"}
+            shortcut="Control + 1"
+            color={activeStyle.tooltip}
+          >
             <MagneticWrapper pullRadius={35} strength={0.3}>
               <button
-                onClick={handleDeleteNote}
-                className="delete-note-button"
-                style={{ borderColor: activeStyle.baseColor }}
+                onMouseDown={(e) => e.preventDefault()} // שומר על הבחירה בזמן הלחיצה
+                onClick={isTextSelected ? clearSelectedTextStyle : handleDeleteNote}
+                className={`delete-note-button ${isTextSelected ? 'is-clear-style-mode' : ''}`}
+                style={{
+                  borderColor: activeStyle.baseColor,
+                  '--x-position': isTextSelected ? "90px" : "40px"
+
+                }}
               />
             </MagneticWrapper>
           </TooltipWrapper>
 
-          <TooltipWrapper text={nextTheme()} shortcut="Control + J" color={activeStyle.tooltip}>
+          <TooltipWrapper
+            text={isTextSelected ? "הדגש" : nextTheme()}
+            shortcut="Control + J"
+            color={activeStyle.tooltip}
+          >
             <MagneticWrapper pullRadius={35} strength={0.3}>
               <button
-                onClick={cycleNoteColor}
-                className="change-note-color-button"
+                onMouseDown={(e) => e.preventDefault()} // שומר על הבחירה בזמן הלחיצה
+                onClick={isTextSelected ? colorSelectedText : cycleNoteColor}
+                className={`change-note-color-button ${isTextSelected ? 'is-highlight-mode' : ''}`}
                 style={{
                   '--base-color': activeStyle.baseColor,
-                  '--active-color': THEMES[(activeStyle.id + 1) % THEMES.length].baseColor
+                  '--active-color': THEMES[(activeStyle.id + 1) % THEMES.length].baseColor,
+                  '--x-position': isTextSelected ? "40px" : "90px"
+                    
                 }}
               />
             </MagneticWrapper>
