@@ -14,6 +14,7 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  direction: rtl;
 }
 
 body {
@@ -43,12 +44,14 @@ a {
 
 .container {
   display: flex;
-  justify-content: center;
+  flex: 1;
+  /* justify-content: center; */
   align-items: center;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100vh;
   /* background-color: yellowgreen; */
   position: relative;
+  transition: all 0.4s ease;
 
 }
 
@@ -57,11 +60,12 @@ a {
   max-height: 90%;
   height: auto;
   width: 75%;
-  position: absolute;
-  right: 300px;
+  position: relative;
+  right: 80px;
   overflow-y: scroll;
   font-family: Arial, Helvetica, sans-serif;
   /* background-color: #2b2b2b; */
+  min-width: 750px;
 
   /* הסתרת פס הגלילה */
   scrollbar-width: none;
@@ -78,8 +82,9 @@ a {
 
 .textarea_title {
   background-color: #6fff0000;
+  /* background-color: #53060071; */
   direction: rtl;
-  width: 100%;
+  /* width: 100%; */
   font-size: 1.5rem;
   overflow: hidden;
   resize: none;
@@ -89,19 +94,21 @@ a {
   /* margin-bottom: 2%; */
   font-weight: 300;
   color: #e8eaed;
-  padding: 40px 118px 8px 328px;
+  padding: 40px 75px 8px 0px;
+  min-width: 750px;
+  max-width: 100%;
 }
 
 .textarea_content {
   /* background-color: rgb(112, 50, 50); */
   direction: rtl;
   font-family: Arial, Helvetica, sans-serif;
-  padding: 8px 118px 10px 328px;
+  padding: 8px 75px 10px 0px;
 
   min-height: 470px;
   height: auto;
 
-  width: 100%;
+  /* width: 100%; */
   font-size: 1rem;
 
   /* word-spacing: 0px;  */
@@ -115,6 +122,8 @@ a {
   color: #e8eaed;
   line-height: 18pt !important;
   position: relative;
+  min-width: 750px;
+  /* max-width: 100%; */
 }
 
 .textarea_content.is-empty::before {
@@ -130,21 +139,21 @@ a {
 
 
 .sidebar {
-  position: fixed;
-  /* מצמיד למסך */
+  position: relative;
   top: 0;
   right: 0;
-  /* מוצמד לצד ימין */
   height: 100vh;
-  /* גובה מלא של החלון */
-  width: 250px;
-  /* background-color: #171717; */
+  min-width: 220px;
+  flex: 0 1 18%;
   border-left: 1px solid;
-  /* גבול משמאל */
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  transition: transform 0.25s ease;
+  transition: all 0.5s ease;
+}
+
+.sidebar:hover {
+  flex: 0 1 18.5%;
 }
 
 .ghost-note {
@@ -208,8 +217,8 @@ a {
   border-radius: 50%;
   position: absolute;
   bottom: 30px;
-  /* left: 40px; */
-  left: var(--x-position);
+  left: 40px;
+  /* left: var(--x-position); */
   transition: all 0.2s ease-out, left 1s cubic-bezier(1, 0, 0, 1);
 }
 
@@ -219,7 +228,7 @@ a {
 
 .delete-note-button:hover {
   border-radius: 0%;
-  background-color: rgba(77, 0, 0, 0.616);
+  /* background-color: rgba(77, 0, 0, 0.616); */
 }
 
 .delete-note-button:active {
@@ -233,8 +242,8 @@ a {
   border-radius: 50%;
   position: absolute;
   bottom: 30px;
-  left: var(--x-position);
-  /* left: 90px + var(--x-position); */
+  /* left: var(--x-position); */
+  left: 90px;
   border: none;
   transition: all 0.2s ease-out, left 1s cubic-bezier(1, 0, 0, 1);
   background-color: var(--base-color);
@@ -256,13 +265,14 @@ a {
   position: relative;
   height: 70px;
   width: 100%;
+  right: 0px;
 }
 
 .icon {
   display: flex;
   height: 70px;
   padding: 22px;
-  justify-content: flex-end;
+  /* justify-content: flex-end; */
   /* מצמיד את התוכן ימינה */
   width: 100%;
   /* חייב שיהיה רוחב מלא */
@@ -377,4 +387,58 @@ a {
   100% {
     transform: translate(40px, 40px) scale(1);
   }
+}
+
+.ai_box {
+  position: relative;
+  left: 0px;
+  flex: 0 1 0.1%;
+  /* flex: 0 1 23%; */
+
+  max-width: 1px;
+  /* background-color: rgba(60, 255, 0, 0.459); */
+  color: white;
+  z-index: 1000;
+  transition: all 0.5s cubic-bezier(1, 0, 0, 1), border-color 0.5s ease;
+  border-right: 4px solid var(--base-color);
+}
+
+.AIactive {
+  flex: 0 1 23%;
+  max-width: 900px;
+  border-right: 1px solid var(--base-color);
+}
+
+.main-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.title_click_area {
+  width: 100%;
+  cursor: text;
+  display: flex;
+  /* מאפשר לילד לשמור על רוחב טבעי בלי להימתח */
+}
+
+.content_click_area {
+  width: 100%;
+  flex: 1;
+  /* ממלא את שאר הגובה של ה-container */
+  cursor: text;
+  display: flex;
+  align-items: flex-start;
+  /* background-color: #ff0000; */
+  /* צבע הרקע של ה-content */
+}
+
+/* האלמנטים עצמם - הרוחב הקבוע */
+.textarea_title,
+.textarea_content {
+  width: 700px;
+  /* להתאים לרוחב שהיה קודם ב-container המקורי שלך */
+  max-width: 100%;
+  /* בטיחות - שלא יגלוש במסכים צרים מאוד */
 }
