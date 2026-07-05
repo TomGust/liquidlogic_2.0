@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import WavyDots from './WavyDots';
 import MagneticWrapper from './MagneticWrapper';
+import GlassEffect from './GlassEffect';
+import { GlassFilterDefs } from "./GlassEffect";
 
 // ==================== הגדרות מצב דמה (DEMO MODE) ====================
 const USE_DUMMY_CHAT_MESSAGES = true;
-const USE_DUMMY_PROMPT_ROTATION = true;
+const USE_DUMMY_PROMPT_ROTATION = true; 
 // =======================================================================
 
 // ==================== הגדרות טריגרים אוטומטיים ====================
@@ -186,19 +188,6 @@ const EuphoriaChatContainer = ({
         noteContentRef.current = noteContent;
         lastEditTimeRef.current = Date.now();
 
-        // טריגר 1: הפסקה בכתיבה - מתאפס בכל הקלדה, מופעל רק אם עברו IDLE_TRIGGER_DELAY_MS בלי שינוי
-        // if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-        // idleTimerRef.current = setTimeout(() => {
-        //     triggerRandomPrompt();
-        // }, IDLE_TRIGGER_DELAY_MS);
-
-        // טריגר 2: קפיצת אורך - כל LENGTH_MILESTONE_CHARS תווים חדשים
-        // const combinedLength = (noteTitle || '').length + (noteContent || '').length;
-        // if (combinedLength - lastContentLengthAtTriggerRef.current >= LENGTH_MILESTONE_CHARS) {
-        //     lastContentLengthAtTriggerRef.current = combinedLength;
-        //     triggerRandomPrompt();
-        // }
-
         // טריגר 3: פסקה חדשה - ירידת שורה כפולה (Enter פעמיים) בתוכן
         const paragraphCount = (noteContent || '').split(/\n\s*\n/).length - 1;
         if (paragraphCount > paragraphCountRef.current) {
@@ -211,36 +200,7 @@ const EuphoriaChatContainer = ({
         };
     }, [noteTitle, noteContent, triggerRandomPrompt]);
 
-    // // טריגר 4: "דופק" תקופתי - כל HEARTBEAT_INTERVAL_MS, רק אם המשתמש עדיין פעיל סביב הפתק
-    // useEffect(() => {
-    //     const interval = setInterval(() => {
-    //         const idleTime = Date.now() - lastEditTimeRef.current;
-    //         if (idleTime < HEARTBEAT_MAX_IDLE_MS) {
-    //             triggerRandomPrompt();
-    //         }
-    //     }, HEARTBEAT_INTERVAL_MS);
 
-    //     return () => clearInterval(interval);
-    // }, [triggerRandomPrompt]);
-
-    // טריגר 5: חזרה לטאב אחרי היעדרות מספיק ארוכה
-    // useEffect(() => {
-    //     const handleVisibilityChange = () => {
-    //         if (document.hidden) {
-    //             hiddenAtRef.current = Date.now();
-    //         } else if (hiddenAtRef.current) {
-    //             const awayDuration = Date.now() - hiddenAtRef.current;
-    //             hiddenAtRef.current = null;
-    //             if (awayDuration >= FOCUS_RETURN_MIN_AWAY_MS) {
-    //                 triggerRandomPrompt();
-    //             }
-    //         }
-    //     };
-
-    //     document.addEventListener('visibilitychange', handleVisibilityChange);
-    //     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    // }, [triggerRandomPrompt]);
-    // ===================================================================
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -312,6 +272,14 @@ const EuphoriaChatContainer = ({
             <DecorativeSVG className="decoration top-left-graphic" color={baseColor} />
             <DecorativeSVG className="decoration bottom-right-graphic" color={baseColor} />
 
+            <div className="empty-chat-placeholder custom-font" style={{
+                opacity: messages.length === 0 && !isThinking ? 1 : 0,
+                top: messages.length === 0 && !isThinking ? '40%' : '45%',
+                '--base-color': baseColor
+            }}>
+                <p>איך אפשר לעזור?</p>
+            </div>
+
             <div className="chat-center-wrapper">
                 <div className="anti-squish-container">
                     <div className="chat-content-container">
@@ -329,7 +297,7 @@ const EuphoriaChatContainer = ({
                                         className="message-bubble ai-message"
                                         onClick={() => handleCopyMessage(message.id, message.text)}
                                         style={{ cursor: 'pointer', position: 'relative' }}
-                                        title="לחץ להעתקה"
+                                    // title="לחץ להעתקה"
                                     >
                                         {message.isNew ? (
                                             <WordRevealAnimation text={message.text} />
@@ -362,7 +330,7 @@ const EuphoriaChatContainer = ({
                         key={dynamicPromptText}
                         onClick={handleCopyPrompt}
                         style={{ cursor: dynamicPromptText && !isPromptThinking ? 'pointer' : 'default' }}
-                        title="לחץ להעתקה"
+                    // title="לחץ להעתקה"
                     >
                         <p className="dynamic-prompt-text custom-font">
                             {isPromptThinking ? "חושב..." : dynamicPromptText}
@@ -370,7 +338,11 @@ const EuphoriaChatContainer = ({
                     </div>
 
 
-                    <div className="input-glow-fx">
+                    <div className="input-glow-fx" style={{
+                        opacity: isThinking ? 1 : 0.3,
+                        bottom: isThinking ? '-10px' : '-40px',
+                    }}
+                    >
                         <WavyDots
                             isColorful={true}
                             dotSize={0.2}
@@ -379,35 +351,47 @@ const EuphoriaChatContainer = ({
                         />
                     </div>
                     <div className="input-glow-bg"></div>
-                    <div className="input-glow-bg_2"></div>
+                    {/* <div className="input-glow-bg_2"></div> */}
 
-                    <div className="input-row-container">
-                        <div className="input-pill-wrapper glass-effect">
-                            <input
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="יש לך שאלה?"
-                                className="input-font"
-                            />
-                            <MagneticWrapper pullRadius={65} strength={0.1}>
-                                <button
-                                    className="send-btn-circle"
-                                    style={{ backgroundColor: baseColor, opacity: isThinking ? 0.5 : 1, cursor: isThinking ? 'not-allowed' : 'pointer' }}
-                                    onClick={handleSendMessage}
-                                    disabled={isThinking}
+                    <MagneticWrapper pullRadius={160} strength={0.02}>
+
+                        <div className="input-row-container">
+                            <GlassFilterDefs />
+
+                            <GlassEffect>
+                                <div className="input-pill-wrapper glass-effect"
                                 >
-                                    <svg width="10" height="11" viewBox="0 0 8 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M7.60759 8.17018C7.67587 8.34025 7.66205 8.50152 7.56613 8.65399C7.4702 8.80647 7.33071 8.8825 7.14766 8.88208L4.67078 8.88208L3.82505 5.20886L2.97931 8.88208L0.502435 8.88208C0.318962 8.88208 0.179473 8.80584 0.0839669 8.65337C-0.0115394 8.50089 -0.025572 8.33962 0.0418688 8.16955L3.35254 0.307881C3.44679 0.102627 3.60513 -3.4486e-07 3.82756 -3.54583e-07C4.04957 -3.64287e-07 4.20623 0.102627 4.29755 0.307881L7.60759 8.17018Z" fill="white" />
-                                    </svg>
-                                </button>
-                            </MagneticWrapper>
+
+                                    <input
+                                        type="text"
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder="יש לך שאלה?"
+                                        className="input-font"
+                                    />
+
+                                    <MagneticWrapper pullRadius={65} strength={0.1}>
+                                        <button
+                                            className="send-btn-circle"
+                                            style={{ '--base-color': baseColor, opacity: isThinking ? 0.5 : 1, cursor: isThinking ? 'not-allowed' : 'pointer' }}
+                                            onClick={handleSendMessage}
+                                            disabled={isThinking}
+                                        >
+                                            <svg width="10" height="11" viewBox="0 0 8 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M7.60759 8.17018C7.67587 8.34025 7.66205 8.50152 7.56613 8.65399C7.4702 8.80647 7.33071 8.8825 7.14766 8.88208L4.67078 8.88208L3.82505 5.20886L2.97931 8.88208L0.502435 8.88208C0.318962 8.88208 0.179473 8.80584 0.0839669 8.65337C-0.0115394 8.50089 -0.025572 8.33962 0.0418688 8.16955L3.35254 0.307881C3.44679 0.102627 3.60513 -3.4486e-07 3.82756 -3.54583e-07C4.04957 -3.64287e-07 4.20623 0.102627 4.29755 0.307881L7.60759 8.17018Z" fill="white" />
+                                            </svg>
+                                        </button>
+                                    </MagneticWrapper>
+                                </div>
+                            </GlassEffect>
+
                         </div>
-                    </div>
+                    </MagneticWrapper>
+
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
