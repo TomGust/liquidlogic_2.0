@@ -219,7 +219,7 @@ a {
 
 .delete-note-button:hover {
   border-radius: 0%;
-  background-color: rgba(77, 0, 0, 0.616);
+  /* background-color: rgba(77, 0, 0, 0.616); */
 }
 
 .delete-note-button:active {
