@@ -3,39 +3,11 @@ import WavyDots from './WavyDots';
 import MagneticWrapper from './MagneticWrapper';
 import GlassEffect from './GlassEffect';
 import { GlassFilterDefs } from "./GlassEffect";
+import { AUTO_PROMPTS, callAiAPI, canTriggerAuto } from './EuphoriaAIConfig';
 
 // ==================== הגדרות מצב דמה (DEMO MODE) ====================
-const USE_DUMMY_CHAT_MESSAGES = true;
-const USE_DUMMY_PROMPT_ROTATION = true; 
+// These are toggled from the dev panel via the `useDummyMode` prop.
 // =======================================================================
-
-// ==================== הגדרות טריגרים אוטומטיים ====================
-const MIN_TRIGGER_INTERVAL_MS = 45000;   // רשת ביטחון: קירור חובה בין כל הפעלה, מכל מקור שהוא (ידני או אוטומטי)
-const MIN_NOTE_LENGTH = 20;              // מינימום תווים (כותרת+תוכן) לפני שמאפשרים טריגר כלשהו
-const IDLE_TRIGGER_DELAY_MS = 8000;      // טריגר 1: הפסקה בכתיבה
-const LENGTH_MILESTONE_CHARS = 150;      // טריגר 2: קפיצת אורך
-const HEARTBEAT_INTERVAL_MS = 90000;     // טריגר 4: דופק תקופתי
-const HEARTBEAT_MAX_IDLE_MS = 20000;     // הדופק פועל רק אם המשתמש עדיין "פעיל" סביב הפתק
-const FOCUS_RETURN_MIN_AWAY_MS = 15000;  // טריגר 5: מינימום זמן היעדרות מהטאב
-// =======================================================================
-
-const PROMPTS_LIST = [
-    (title, content) => `הקשר - זהו פתק שהמשתמש כותב כרגע:
-אתה "המעורר". התעלם מהפתק, נזוף בו קלות שיעזוב את המסך, ייצא החוצה ויקדם את החיים האמיתיים.
-הגב בגובה העיניים, עד 2 שורות קצרות.`,
-
-    (title, content) => `הקשר - זהו פתק שהמשתמש כותב כרגע:
-אתה "הביקורתי". קטול את הרעיון, מצא חורים בגישה ישירה, חסרת סבלנות וקצת עצבנית.
-הגב עד 2 שורות קצרות וללא הנחות.`,
-
-    (title, content) => `הקשר - זהו פתק שהמשתמש כותב כרגע:
-אתה "המאתגר". קח את הרעיון בפתק ואתגר את המשתמש לחשוב הרבה יותר בגדול ולפתח אותו.
-הגב באנרגיה שדוחפת קדימה, עד 2 שורות קצרות.`,
-
-    (title, content) => `הקשר - זהו פתק שהמשתמש כותב כרגע:
-אתה "המחפש מה חסר". מצא פרט שחסר בפתק והתחל תמיד ב: "בסגנון לדוגמא כמו... רק ראיתי שחסר לך...".
-הגב עד 2 שורות קצרות וקולעות.`
-];
 
 const WordRevealAnimation = ({ text }) => {
     const words = text.split(' ');
@@ -57,53 +29,19 @@ const DecorativeSVG = ({ className, color }) => (
 );
 
 // ==================== קריאה ל-AI ====================
-const callAiAPI = async (userText, noteTitle, noteContent) => {
-    try {
-        const url = "http://localhost:1234/v1/chat/completions";
-
-        const systemMessage = userText
-
-        //         const systemMessage = `זהו פתק שהמשתמש כותב כרגע וזהו ההקשר לשיחה:
-        // כותרת: "${noteTitle || ''}"
-        // תוכן: "${noteContent || ''}"
-
-        // התייחס לפתק הזה כשרלוונטי לשאלות המשתמש. המשתמש כתב:"${userText || ''}"`;
-
-        console.log(systemMessage)
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "local-model",
-                messages: [
-                    { role: "system", content: systemMessage },
-                    { role: "user", content: userText }
-                ],
-                temperature: 0.7
-            })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            console.error("שגיאת API של LM Studio:", data);
-            return "אירעה שגיאה בפנייה ל-AI.";
-        }
-
-        const textBlock = data.choices?.[0]?.message?.content;
-        return textBlock || "לא התקבלה תשובה מה-AI.";
-    } catch (err) {
-        console.error("שגיאה בפנייה ל-AI:", err);
-        return "אירעה שגיאה בפנייה ל-AI. ודא ש-LM Studio פועל ושהשרת המקומי הופעל.";
-    }
-};
+// הקריאה עוברת ל-EuphoriaAIConfig
+// =======================================================================
 
 const EuphoriaChatContainer = ({
     baseColor = "#3C552D",
     apiKey = "",
     noteTitle = "",
-    noteContent = ""
+    noteContent = "",
+    useDummyMode = true
 }) => {
+    const useDummyChatMessages = useDummyMode;
+    const useDummyPromptRotation = useDummyMode;
+
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
     const [isThinking, setIsThinking] = useState(false);
@@ -135,16 +73,12 @@ const EuphoriaChatContainer = ({
     // =======================================================================
 
     // בדיקה מרכזית: זו נקודת השער היחידה שדרכה עובר כל טריגר, ידני או אוטומטי
-    const canTriggerNow = () => {
-        const now = Date.now();
-        const combinedLength = (noteTitleRef.current || '').trim().length + (noteContentRef.current || '').trim().length;
-
-        if (combinedLength < MIN_NOTE_LENGTH) return false;          // פתק ריק/קצר מדי - לא מפעילים
-        if (isPromptThinkingRef.current) return false;               // כבר יש בקשה בתהליך
-        if (now - lastTriggerTimeRef.current < MIN_TRIGGER_INTERVAL_MS) return false; // קירור חובה - ללא יוצא מן הכלל
-
-        return true;
-    };
+    const canTriggerNow = () => canTriggerAuto({
+        noteTitle: noteTitleRef.current,
+        noteContent: noteContentRef.current,
+        isPromptThinking: isPromptThinkingRef.current,
+        lastTriggerTime: lastTriggerTimeRef.current
+    });
 
     const triggerRandomPrompt = useCallback(async () => {
         if (!canTriggerNow()) return;
@@ -152,12 +86,12 @@ const EuphoriaChatContainer = ({
         // ננעל מיידית, לפני ה-await, כדי למנוע מרוץ בין טריגרים שנורים כמעט בו-זמנית
         lastTriggerTimeRef.current = Date.now();
 
-        if (PROMPTS_LIST.length === 0) return;
+        if (AUTO_PROMPTS.length === 0) return;
 
-        const randomPromptFn = PROMPTS_LIST[Math.floor(Math.random() * PROMPTS_LIST.length)];
+        const randomPromptFn = AUTO_PROMPTS[Math.floor(Math.random() * AUTO_PROMPTS.length)];
         const randomPrompt = randomPromptFn(noteTitleRef.current, noteContentRef.current);
 
-        if (USE_DUMMY_PROMPT_ROTATION) {
+        if (useDummyPromptRotation) {
             setDynamicPromptText(randomPrompt);
             return;
         }
@@ -236,7 +170,7 @@ const EuphoriaChatContainer = ({
 
         let aiText;
 
-        if (USE_DUMMY_CHAT_MESSAGES) {
+        if (useDummyChatMessages) {
             aiText = await new Promise((resolve) => {
                 setTimeout(() => {
                     const safeIndex = currentPredefinedMessageIndex % predefinedMessages.length;
@@ -278,7 +212,14 @@ const EuphoriaChatContainer = ({
                 '--base-color': baseColor
             }}>
                 <p>איך אפשר לעזור?</p>
+                {/* <p>טוב לראות אותך, כמו תמיד♥️</p> */}
             </div>
+
+                {/* <MagneticWrapper pullRadius={235} strength={0.01}>
+                    <div className='developer_mode_box'>
+                        <button className='AI_Mode_b' >AI Mode</button>
+                    </div>
+                </MagneticWrapper> */}
 
             <div className="chat-center-wrapper">
                 <div className="anti-squish-container">
@@ -353,7 +294,7 @@ const EuphoriaChatContainer = ({
                     <div className="input-glow-bg"></div>
                     {/* <div className="input-glow-bg_2"></div> */}
 
-                    <MagneticWrapper pullRadius={160} strength={0.02}>
+                    {/* <MagneticWrapper pullRadius={160} strength={0.02}> */}
 
                         <div className="input-row-container">
                             <GlassFilterDefs />
@@ -371,7 +312,7 @@ const EuphoriaChatContainer = ({
                                         className="input-font"
                                     />
 
-                                    <MagneticWrapper pullRadius={65} strength={0.1}>
+                                    {/* <MagneticWrapper pullRadius={65} strength={0.1}> */}
                                         <button
                                             className="send-btn-circle"
                                             style={{ '--base-color': baseColor, opacity: isThinking ? 0.5 : 1, cursor: isThinking ? 'not-allowed' : 'pointer' }}
@@ -382,12 +323,12 @@ const EuphoriaChatContainer = ({
                                                 <path d="M7.60759 8.17018C7.67587 8.34025 7.66205 8.50152 7.56613 8.65399C7.4702 8.80647 7.33071 8.8825 7.14766 8.88208L4.67078 8.88208L3.82505 5.20886L2.97931 8.88208L0.502435 8.88208C0.318962 8.88208 0.179473 8.80584 0.0839669 8.65337C-0.0115394 8.50089 -0.025572 8.33962 0.0418688 8.16955L3.35254 0.307881C3.44679 0.102627 3.60513 -3.4486e-07 3.82756 -3.54583e-07C4.04957 -3.64287e-07 4.20623 0.102627 4.29755 0.307881L7.60759 8.17018Z" fill="white" />
                                             </svg>
                                         </button>
-                                    </MagneticWrapper>
+                                    {/* </MagneticWrapper> */}
                                 </div>
                             </GlassEffect>
 
                         </div>
-                    </MagneticWrapper>
+                    {/* </MagneticWrapper> */}
 
                 </div>
             </div>

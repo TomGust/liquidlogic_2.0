@@ -4,6 +4,7 @@ import TooltipWrapper from './api/TooltipWrapper';
 import AmbientBackground from './api/AmbientBackground';
 import MagneticWrapper from './api/MagneticWrapper';
 import EuphoriaChatContainer from './api/EuphoriaChatContainer';
+import DevPanel from './api/DevPanel';
 
 const THEMES = [
   {
@@ -54,6 +55,18 @@ const THEMES = [
     ambientColor: "#ffd900",
     ambientOpacity: 0.2
   },
+  {
+    id: 4,
+    name: "אמוק",
+    baseColor: "#360000",
+    background: "#170000",
+    tooltip: "#ac160b",
+    highlightText: "#ac160b",
+    icon: "#ac160b",
+    selectedNote: "#ac160b36",
+    ambientColor: "#360000",
+    ambientOpacity: 0.4
+  },
   // {
   //   id: 3,
   //   name: "יוון",
@@ -69,10 +82,14 @@ const THEMES = [
 ];
 
 const placeholderSentences = [
-  "כתוב כאן...",
-  "בוא נשמע מה יש לך להגיד...",
-  "בוא נעשה בזה סדר...",
-  "תראה מה אתה שווה..."
+  // "כתוב כאן...",
+  // "בוא נשמע מה יש לך להגיד...",
+  // "בוא נעשה בזה סדר...",
+  // "תראה מה אתה שווה..."
+  // "אני מקשיב, מה שלומך?",
+  "טוב לראות אותך!",
+  // "המרחב שלך",
+  // "משעמם לי בלעדיך, ספר לי עוד!"
 ];
 
 const getRandomPlaceholder = () =>
@@ -96,12 +113,32 @@ export default function Home() {
   const [isTextSelected, setIsTextSelected] = useState(false);
 
   const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor);
-  const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
+  // const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
+
+  // ✅ מצב מפתח - צבעים מותאמים אישית שנשלטים מהפאנל הצף
+  const [devMode, setDevMode] = useState(false);
+
+  const [devColors, setDevColors] = useState({
+    baseColor: THEMES[0].baseColor,
+    background: THEMES[0].background,
+    tooltip: THEMES[0].tooltip,
+    highlightText: THEMES[0].highlightText,
+    icon: THEMES[0].icon,
+    selectedNote: THEMES[0].selectedNote,
+    ambientColor: THEMES[0].ambientColor,
+    ambientOpacity: 0.4
+  });
+
+  // ✅ כשdevMode דלוק - הצבעים באים מהפאנל במקום מה-THEMES הרגילים
+  const activeStyle = devMode
+    ? { ...THEMES[0], ...devColors, name: "פיתוח" }
+    : (THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0]);
 
   // ✅ פתק ראשוני בלי placeholder
   const [notes, setNotes] = useState([createNewNote()]);
   const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
-const [AIisActive, setIsAIActive] = useState(false);
+  const [AIisActive, setIsAIActive] = useState(false);
+  const [aiUsage, setAiUsage] = useState(true);
   // ✅ תיקון Hydration — placeholder מוגדר רק בקליינט אחרי mount
   useEffect(() => {
     setIsMounted(true);
@@ -691,6 +728,18 @@ const [AIisActive, setIsAIActive] = useState(false);
           >+</button>
         </div>
 
+        <DevPanel
+          devMode={devMode}
+          setDevMode={setDevMode}
+          devColors={devColors}
+          setDevColors={setDevColors}
+          aiUsage={aiUsage}
+          setAiUsage={setAiUsage}
+        />
+
+        {/* <img className='Personal_item_mane Personal_item_1' src={"Personal_item.png"}></img>
+        <img className='Personal_item_mane Personal_item_2' src={"flowerpot.png"}></img> */}
+
         {/* Editor */}
         <div className="container" onDoubleClick={handleDoubleClick}>
 
@@ -720,7 +769,6 @@ const [AIisActive, setIsAIActive] = useState(false);
               ></div>
             </div>
           </div>
-
           <TooltipWrapper
             text={isTextSelected ? "ניקוי" : "מחק"}
             shortcut="Control + 1"
@@ -758,6 +806,8 @@ const [AIisActive, setIsAIActive] = useState(false);
             </MagneticWrapper>
           </TooltipWrapper>
         </div>
+        {/* <span class="lumi-symbols">gemini_chat</span>
+        <span class="lumi-symbols">side_nav</span> */}
 
         {/* AI Assistant */}
         <div className={`ai_box ${AIisActive ? 'AIactive' : ''}`} style={{
@@ -768,6 +818,7 @@ const [AIisActive, setIsAIActive] = useState(false);
               baseColor={activeStyle.baseColor}
               noteTitle={title}
               noteContent={content}
+              useDummyMode={aiUsage}
             />
           </div>
         </div>

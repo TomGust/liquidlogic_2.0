@@ -396,7 +396,6 @@ a {
   /* flex: 0 1 23%; */
 
   max-width: 1px;
-  /* background-color: rgba(60, 255, 0, 0.459); */
   color: white;
   z-index: 1000;
   transition: all 0.5s cubic-bezier(1, 0, 0, 1), border-color 0.5s ease;
@@ -441,4 +440,52 @@ a {
   /* להתאים לרוחב שהיה קודם ב-container המקורי שלך */
   max-width: 100%;
   /* בטיחות - שלא יגלוש במסכים צרים מאוד */
+}
+
+.Personal_item_mane {
+
+  position: absolute;
+
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.Personal_item_mane:hover {
+  transform: rotate(-5deg);
+}
+
+.Personal_item_1 {
+  transform: rotate(-40deg);
+  filter: drop-shadow(6px 6px 0px #ff990080);
+  top: 81%;
+  right: 320px;
+  height: 120px;
+  width: 120px;
+}
+
+.Personal_item_2 {
+  transform: rotate(5deg);
+  filter: drop-shadow(6px 6px 0px #e5ff004d);
+  top: 83%;
+  right: 440px;
+  height: 100px;
+  width: 100px;
+}
+
+@font-face {
+  font-family: 'lumi-symbols';
+  src: url('/fonts/font.woff2') format('woff2');
+}
+
+.lumi-symbols {
+  font-family: 'lumi-symbols';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  font-size: 25px; /* שנה לגודל הרצוי */
+  color: #e0e0e0;  /* צבע כחול בסגנון גוגל לדוגמה */  
 }

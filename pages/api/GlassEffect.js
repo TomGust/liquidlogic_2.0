@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 
 // ============================================================
-// כאן ה-SVG filter שלך (נשאר ללא שינוי)
+// ה-SVG filter (ללא שינוי)
 // ============================================================
 export function GlassFilterDefs({
   id = "liquid-glass-filter",
@@ -25,7 +25,7 @@ export function GlassFilterDefs({
           />
           <feDisplacementMap
             in="SourceGraphic"
-            in2="turbulence"  
+            in2="turbulence"
             scale={scale}
             xChannelSelector="R"
             yChannelSelector="G"
@@ -37,7 +37,7 @@ export function GlassFilterDefs({
 }
 
 // ============================================================
-// קומפוננטת ה-wrapper המעודכנת עם אפקט הזוהר
+// קומפוננטת ה-wrapper
 // ============================================================
 export default function GlassEffect({
   children,
@@ -47,22 +47,24 @@ export default function GlassEffect({
   filterId = "liquid-glass-filter",
   backdropFilter,
   tint = "hsl(0 0% 100% / 0%)",
-  // הוספנו פרופים לשליטה על הזוהר:
-  glowColor = "rgba(255, 232, 101, 0.14)", 
+  // glowColor = "rgba(255, 232, 101, 0.14)", 
+  // activeGlowColor = "rgba(255, 237, 134, 0.23)", 
+  glowColor = "rgba(255, 255, 255, 0.07)",
+  activeGlowColor = "rgba(255, 255, 255, 0.07)",
   glowSize = "150px"
 }) {
   const resolvedBackdropFilter = backdropFilter || `url(#${filterId}) brightness(1.12)`;
-  
+
   const containerRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
-  // פונקציה שעוקבת אחרי מיקום העכבר ומעדכנת משתני CSS
   const handleMouseMove = (e) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     containerRef.current.style.setProperty("--mouse-x", `${x}px`);
     containerRef.current.style.setProperty("--mouse-y", `${y}px`);
   };
@@ -73,16 +75,22 @@ export default function GlassEffect({
       className={className}
       onMouseMove={handleMouseMove}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setIsActive(false);
+      }}
+      onMouseDown={() => setIsActive(true)}
+      onMouseUp={() => setIsActive(false)}
       style={{
         position: "relative",
         borderRadius,
         overflow: "hidden",
         isolation: "isolate",
+        cursor: "pointer",
         ...style,
       }}
     >
-      {/* 1. שכבת הזכוכית המקורית (הפילטר) */}
+      {/* 1. שכבת הזכוכית המקורית */}
       <div
         className="glass-effect__backdrop"
         style={{
@@ -96,17 +104,31 @@ export default function GlassEffect({
         }}
       />
 
-      {/* 2. שכבת הזוהר שעוקבת אחרי העכבר */}
+      {/* 2. שכבת הזוהר הרגילה (Hover) */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           borderRadius: "inherit",
-          pointerEvents: "none", // מונע מהשכבה הזו לחסום לחיצות על התוכן
+          pointerEvents: "none",
           background: `radial-gradient(circle ${glowSize} at var(--mouse-x, 50%) var(--mouse-y, 50%), ${glowColor}, transparent 80%)`,
-          opacity: isHovered ? 1 : 0,
-          transition: "opacity 0.3s ease", // מעבר חלק כשנכנסים/יוצאים עם העכבר
-          zIndex: 0, 
+          opacity: isHovered && !isActive ? 1 : 0, // מסתירים בעת לחיצה כדי למנוע ערבוב צבעים
+          transition: "opacity 0.3s ease",
+          zIndex: 0,
+        }}
+      />
+
+      {/* 3. שכבת הזוהר המוארת (Active/Click) */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "inherit",
+          pointerEvents: "none",
+          background: `radial-gradient(circle ${glowSize} at var(--mouse-x, 50%) var(--mouse-y, 50%), ${activeGlowColor}, transparent 80%)`,
+          opacity: isActive ? 1 : 0,
+          transition: "opacity 0.3s ease", // מעבר מהיר יותר בלחיצה
+          zIndex: 0,
         }}
       />
 
@@ -120,7 +142,7 @@ export default function GlassEffect({
         }
       `}</style>
 
-      {/* 3. שכבת התוכן בפועל */}
+      {/* 4. שכבת התוכן בפועל */}
       <div style={{ position: "relative", zIndex: 1, borderRadius: "inherit" }}>
         {children}
       </div>
