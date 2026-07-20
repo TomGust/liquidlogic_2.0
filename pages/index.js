@@ -3,6 +3,8 @@ import { useRef, useState, useEffect } from "react";
 import TooltipWrapper from './api/TooltipWrapper';
 import AmbientBackground from './api/AmbientBackground';
 import MagneticWrapper from './api/MagneticWrapper';
+import EuphoriaChatContainer from './api/EuphoriaChatContainer';
+import DevPanel from './api/DevPanel';
 
 const THEMES = [
   {
@@ -53,25 +55,41 @@ const THEMES = [
     ambientColor: "#ffd900",
     ambientOpacity: 0.2
   },
-  // {
-  //   id: 3,
-  //   name: "יוון",
-  //   baseColor: "#643200",
-  //   background: "#003f69",
-  //   tooltip: "#0ab7fc",
-  //   highlightText: "cyan",
-  //   icon: "#0ab7fc",
-  //   selectedNote: "#6432007e",
-  //   ambientColor: "#7fb839",
-  //   ambientOpacity: 0.8
-  // },
+  {
+    id: 4,
+    name: "אמוק",
+    baseColor: "#360000",
+    background: "#170000",
+    tooltip: "#ac160b",
+    highlightText: "#ac160b",
+    icon: "#ac160b",
+    selectedNote: "#ac160b36",
+    ambientColor: "#360000",
+    ambientOpacity: 0
+  },
+  {
+    id: 0,
+    name: "חד",
+    baseColor: "#30330060",
+    background: "#000000",
+    tooltip: "#303300",
+    highlightText: "#a8a300",
+    icon: "#30330060",
+    selectedNote: "#30330060",
+    ambientColor: "#000000",
+    ambientOpacity: 0
+  }
 ];
 
 const placeholderSentences = [
-  "כתוב כאן...",
-  "בוא נשמע מה יש לך להגיד...",
-  "בוא נעשה בזה סדר...",
-  "תראה מה אתה שווה..."
+  // "כתוב כאן...",
+  // "בוא נשמע מה יש לך להגיד...",
+  // "בוא נעשה בזה סדר...",
+  // "תראה מה אתה שווה..."
+  // "אני מקשיב, מה שלומך?",
+  "טוב לראות אותך!",
+  // "המרחב שלך",
+  // "משעמם לי בלעדיך, ספר לי עוד!"
 ];
 
 const getRandomPlaceholder = () =>
@@ -95,12 +113,32 @@ export default function Home() {
   const [isTextSelected, setIsTextSelected] = useState(false);
 
   const [selectedNoteColor, setSelectedNoteColor] = useState(THEMES[0].baseColor);
-  const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
+  // const activeStyle = THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0];
+
+  // ✅ מצב מפתח - צבעים מותאמים אישית שנשלטים מהפאנל הצף
+  const [devMode, setDevMode] = useState(false);
+
+  const [devColors, setDevColors] = useState({
+    baseColor: THEMES[0].baseColor,
+    background: THEMES[0].background,
+    tooltip: THEMES[0].tooltip,
+    highlightText: THEMES[0].highlightText,
+    icon: THEMES[0].icon,
+    selectedNote: THEMES[0].selectedNote,
+    ambientColor: THEMES[0].ambientColor,
+    ambientOpacity: 0.4
+  });
+
+  // ✅ כשdevMode דלוק - הצבעים באים מהפאנל במקום מה-THEMES הרגילים
+  const activeStyle = devMode
+    ? { ...THEMES[0], ...devColors, name: "פיתוח" }
+    : (THEMES.find(t => t.baseColor === selectedNoteColor) || THEMES[0]);
 
   // ✅ פתק ראשוני בלי placeholder
   const [notes, setNotes] = useState([createNewNote()]);
   const [currentNoteIdx, setCurrentNoteIdx] = useState(0);
-
+  const [AIisActive, setIsAIActive] = useState(false);
+  const [aiUsage, setAiUsage] = useState(true);
   // ✅ תיקון Hydration — placeholder מוגדר רק בקליינט אחרי mount
   useEffect(() => {
     setIsMounted(true);
@@ -144,6 +182,7 @@ export default function Home() {
       }
       if (e.ctrlKey && e.code === 'KeyJ') {
         e.preventDefault();
+        // alert(notes[currentNoteIdx]?.content);
         if (isTextSelected) {
           colorSelectedText();
         } else {
@@ -339,80 +378,80 @@ export default function Home() {
     }
   };
 
-const clearSelectedTextStyle = () => {
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+  const clearSelectedTextStyle = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
 
-  const editor = textRef.current;
-  if (!editor) return;
+    const editor = textRef.current;
+    if (!editor) return;
 
-  const range = selection.getRangeAt(0);
+    const range = selection.getRangeAt(0);
 
-  // מפצל את ה-span שגבול הבחירה (start/end) נמצא באמצעו,
-  // כך שהגבול ייפול בדיוק על גבול של span ולא בתוכו
-  const splitAtBoundary = (container, offset) => {
-    if (container.nodeType !== Node.TEXT_NODE) return;
+    // מפצל את ה-span שגבול הבחירה (start/end) נמצא באמצעו,
+    // כך שהגבול ייפול בדיוק על גבול של span ולא בתוכו
+    const splitAtBoundary = (container, offset) => {
+      if (container.nodeType !== Node.TEXT_NODE) return;
 
-    let node = container;
-    if (offset > 0 && offset < node.length) {
-      node = node.splitText(offset); // node = החלק שמתחיל בדיוק בגבול
-    } else if (offset === 0) {
-      node = container;
-    } else {
-      return; // הגבול כבר בסוף הטקסט, אין מה לפצל
-    }
-
-    // מטפס למעלה ומפצל כל span.highlighted-text אבא, כל עוד הגבול באמצעו
-    let current = node;
-    let parent = current.parentNode;
-    while (parent && parent !== editor && parent.classList?.contains('highlighted-text')) {
-      const clone = parent.cloneNode(false); // span ריק עם אותו class
-      let n = current;
-      while (n) {
-        const next = n.nextSibling;
-        clone.appendChild(n);
-        n = next;
+      let node = container;
+      if (offset > 0 && offset < node.length) {
+        node = node.splitText(offset); // node = החלק שמתחיל בדיוק בגבול
+      } else if (offset === 0) {
+        node = container;
+      } else {
+        return; // הגבול כבר בסוף הטקסט, אין מה לפצל
       }
-      parent.parentNode.insertBefore(clone, parent.nextSibling);
-      current = clone;
-      parent = clone.parentNode;
-    }
+
+      // מטפס למעלה ומפצל כל span.highlighted-text אבא, כל עוד הגבול באמצעו
+      let current = node;
+      let parent = current.parentNode;
+      while (parent && parent !== editor && parent.classList?.contains('highlighted-text')) {
+        const clone = parent.cloneNode(false); // span ריק עם אותו class
+        let n = current;
+        while (n) {
+          const next = n.nextSibling;
+          clone.appendChild(n);
+          n = next;
+        }
+        parent.parentNode.insertBefore(clone, parent.nextSibling);
+        current = clone;
+        parent = clone.parentNode;
+      }
+    };
+
+    // חשוב: מפצלים קודם את הסוף, כדי שהפיצול בהתחלה לא ישבש את ה-offset של הסוף
+    // (רלוונטי בעיקר כששניהם באותו טקסט node)
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+
+    splitAtBoundary(endContainer, endOffset);
+    splitAtBoundary(startContainer, startOffset);
+
+    // אחרי הפיצול, יוצרים מחדש Range נקי מ-start עד end (לפי אותם containers/offsets המקוריים,
+    // שעדיין תקפים כי splitText לא הזיז את הצמתים המקוריים, רק הוסיף חדשים אחריהם)
+    const cleanRange = document.createRange();
+    cleanRange.setStart(startContainer, Math.min(startOffset, startContainer.length ?? startOffset));
+    cleanRange.setEnd(endContainer, Math.min(endOffset, endContainer.length ?? endOffset));
+
+    // עכשיו כל span.highlighted-text שנחתך על ידי הבחירה חייב להיות *לגמרי* בתוכה
+    // (כי פיצלנו בדיוק על הגבולות) - אז פשוט מפרקים אותו
+    const spans = editor.querySelectorAll('span.highlighted-text');
+    spans.forEach((span) => {
+      if (cleanRange.intersectsNode(span)) {
+        const parent = span.parentNode;
+        while (span.firstChild) {
+          parent.insertBefore(span.firstChild, span);
+        }
+        parent.removeChild(span);
+      }
+    });
+
+    editor.normalize();
+    selection.removeAllRanges();
+    setContent(editor.innerHTML);
+    setIsTextSelected(false);
   };
-
-  // חשוב: מפצלים קודם את הסוף, כדי שהפיצול בהתחלה לא ישבש את ה-offset של הסוף
-  // (רלוונטי בעיקר כששניהם באותו טקסט node)
-  const endContainer = range.endContainer;
-  const endOffset = range.endOffset;
-  const startContainer = range.startContainer;
-  const startOffset = range.startOffset;
-
-  splitAtBoundary(endContainer, endOffset);
-  splitAtBoundary(startContainer, startOffset);
-
-  // אחרי הפיצול, יוצרים מחדש Range נקי מ-start עד end (לפי אותם containers/offsets המקוריים,
-  // שעדיין תקפים כי splitText לא הזיז את הצמתים המקוריים, רק הוסיף חדשים אחריהם)
-  const cleanRange = document.createRange();
-  cleanRange.setStart(startContainer, Math.min(startOffset, startContainer.length ?? startOffset));
-  cleanRange.setEnd(endContainer, Math.min(endOffset, endContainer.length ?? endOffset));
-
-  // עכשיו כל span.highlighted-text שנחתך על ידי הבחירה חייב להיות *לגמרי* בתוכה
-  // (כי פיצלנו בדיוק על הגבולות) - אז פשוט מפרקים אותו
-  const spans = editor.querySelectorAll('span.highlighted-text');
-  spans.forEach((span) => {
-    if (cleanRange.intersectsNode(span)) {
-      const parent = span.parentNode;
-      while (span.firstChild) {
-        parent.insertBefore(span.firstChild, span);
-      }
-      parent.removeChild(span);
-    }
-  });
-
-  editor.normalize();
-  selection.removeAllRanges();
-  setContent(editor.innerHTML);
-  setIsTextSelected(false);
-};
 
   const saveCurrentNote = () => {
     setNotes((prev) => {
@@ -565,6 +604,40 @@ const clearSelectedTextStyle = () => {
 
   };
 
+  // אם useRef עוד לא מיובא - להוסיף אותו לייבוא של react
+  const titleRef = useRef(null);
+
+  // לוחצים על ה-wrapper של הכותרת -> פוקוס בסוף הטקסט
+  const focusTitleWrapper = (e) => {
+    // אם הלחיצה הייתה ישירות על ה-input, הדפדפן כבר מטפל בזה כרגיל - לא נוגעים
+    if (e.target !== e.currentTarget) return;
+
+    titleRef.current?.focus();
+    // מעביר את הסמן לסוף הטקסט
+    const len = titleRef.current.value.length;
+    titleRef.current.setSelectionRange(len, len);
+  };
+
+  // לוחצים על ה-wrapper של התוכן -> פוקוס בסוף הטקסט
+  const focusContentWrapper = (e) => {
+    if (e.target !== e.currentTarget) return;
+
+    const el = textRef.current;
+    if (!el) return;
+
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false); // false = לסוף
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  };
+
+  const handleDoubleClick = () => {
+    setIsAIActive(!AIisActive);
+  }
+
   return (
     <>
       <AmbientBackground baseColor={activeStyle.ambientColor} opacity={activeStyle.ambientOpacity} />
@@ -574,7 +647,9 @@ const clearSelectedTextStyle = () => {
         <link rel="icon" href="./icon.svg" />
       </Head>
 
-      <div style={{ display: "flex", height: "100vh" }}>
+      {/* ה-Main Container הראשי קיבל כעת קלאס מסודר */}
+      <div className="main-container" style={{ display: "flex", height: "100vh", width: "100vw", overflow: "hidden" }}>
+
         <div
           className="background"
           style={{
@@ -586,7 +661,7 @@ const clearSelectedTextStyle = () => {
         {/* Sidebar */}
         <div className="sidebar" style={{
           borderColor: activeStyle.selectedNote,
-          transition: "background-color 0.5s ease",
+          // transition: "background-color 0.5s ease",
         }}>
           <div className="perent-icon">
             <div className="icon">
@@ -653,42 +728,47 @@ const clearSelectedTextStyle = () => {
           >+</button>
         </div>
 
-        {/* Editor */}
-        <div className="container" style={{ flex: 1 }}>
-          <div className="text_box">
-            <input
-              type="text"
-              className="textarea_title"
-              value={title}
-              onChange={handleTitleChange}
-              placeholder="כותרת"
-              onKeyDown={handleTitleKeyDown}
+        <DevPanel
+          devMode={devMode}
+          setDevMode={setDevMode}
+          devColors={devColors}
+          setDevColors={setDevColors}
+          aiUsage={aiUsage}
+          setAiUsage={setAiUsage}
+        />
 
-            />
-            {/*
-              ✅ placeholder מוצג רק אחרי mount כדי למנוע hydration mismatch.
-              ✅ --highlight-color מוגדר כאן ומועבר ל-.highlighted-text ב-CSS,
-              כך שכל טקסט מודגש עוקב אוטומטית אחרי צבע ה-highlight של הסגנון הפעיל.
-            */}
-            <div
-              className={`textarea_content ${content.length === 0 ? 'is-empty' : ''} ${isTextSelected ? 'has-selection' : ''}`}
-              style={{ '--highlight-color': activeStyle.highlightText }}
-              contentEditable={true}
-              onInput={handleInput}
-              onPaste={handlePaste}
-              onKeyDown={handleKeyDown}
-              ref={textRef}
-              data-placeholder={isMounted ? (notes[currentNoteIdx]?.placeholder || "כתוב כאן...") : ""}
-            >
+        {/* <img className='Personal_item_mane Personal_item_1' src={"Personal_item.png"}></img>
+        <img className='Personal_item_mane Personal_item_2' src={"flowerpot.png"}></img> */}
+
+        {/* Editor */}
+        <div className="container" onDoubleClick={handleDoubleClick}>
+
+          <div className="text_box">
+            <div className="title_click_area" onClick={focusTitleWrapper}>
+              <input
+                type="text"
+                className="textarea_title"
+                value={title}
+                onChange={handleTitleChange}
+                placeholder="כותרת"
+                onKeyDown={handleTitleKeyDown}
+                ref={titleRef}
+              />
+            </div>
+
+            <div className="content_click_area" onClick={focusContentWrapper}>
+              <div
+                className={`textarea_content ${content.length === 0 ? 'is-empty' : ''} ${isTextSelected ? 'has-selection' : ''}`}
+                style={{ '--highlight-color': activeStyle.highlightText }}
+                contentEditable={true}
+                onInput={handleInput}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                ref={textRef}
+                data-placeholder={isMounted ? (notes[currentNoteIdx]?.placeholder || "כתוב כאן...") : ""}
+              ></div>
             </div>
           </div>
-
-          {/*
-            ✅ שני הכפתורים הקיימים משנים את היעוד שלהם בזמן שטקסט מסומן:
-            - כפתור ה"מחק" → מחזיר את הטקסט המסומן בלבד לעיצוב המקורי (מסיר הדגשה)
-            - כפתור ה"שינוי סגנון" → מדגיש את הטקסט המסומן
-            כשהבחירה מתבטלת, שני הכפתורים חוזרים אוטומטית להתנהגות המקורית שלהם.
-          */}
           <TooltipWrapper
             text={isTextSelected ? "ניקוי" : "מחק"}
             shortcut="Control + 1"
@@ -696,13 +776,12 @@ const clearSelectedTextStyle = () => {
           >
             <MagneticWrapper pullRadius={35} strength={0.3}>
               <button
-                onMouseDown={(e) => e.preventDefault()} // שומר על הבחירה בזמן הלחיצה
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={isTextSelected ? clearSelectedTextStyle : handleDeleteNote}
                 className={`delete-note-button ${isTextSelected ? 'is-clear-style-mode' : ''}`}
                 style={{
                   borderColor: activeStyle.baseColor,
                   '--x-position': isTextSelected ? "90px" : "40px"
-
                 }}
               />
             </MagneticWrapper>
@@ -715,19 +794,35 @@ const clearSelectedTextStyle = () => {
           >
             <MagneticWrapper pullRadius={35} strength={0.3}>
               <button
-                onMouseDown={(e) => e.preventDefault()} // שומר על הבחירה בזמן הלחיצה
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={isTextSelected ? colorSelectedText : cycleNoteColor}
                 className={`change-note-color-button ${isTextSelected ? 'is-highlight-mode' : ''}`}
                 style={{
                   '--base-color': activeStyle.baseColor,
                   '--active-color': THEMES[(activeStyle.id + 1) % THEMES.length].baseColor,
                   '--x-position': isTextSelected ? "40px" : "90px"
-                    
                 }}
               />
             </MagneticWrapper>
           </TooltipWrapper>
         </div>
+        {/* <span class="lumi-symbols">gemini_chat</span>
+        <span class="lumi-symbols">side_nav</span> */}
+
+        {/* AI Assistant */}
+        <div className={`ai_box ${AIisActive ? 'AIactive' : ''}`} style={{
+          '--base-color': activeStyle.selectedNote,
+        }}>
+          <div style={{ height: '100%', }}>
+            <EuphoriaChatContainer
+              baseColor={activeStyle.baseColor}
+              noteTitle={title}
+              noteContent={content}
+              useDummyMode={aiUsage}
+            />
+          </div>
+        </div>
+
       </div>
     </>
   );
