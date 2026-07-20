@@ -65,20 +65,20 @@ const THEMES = [
     icon: "#ac160b",
     selectedNote: "#ac160b36",
     ambientColor: "#360000",
-    ambientOpacity: 0.4
+    ambientOpacity: 0
   },
-  // {
-  //   id: 3,
-  //   name: "יוון",
-  //   baseColor: "#643200",
-  //   background: "#003f69",
-  //   tooltip: "#0ab7fc",
-  //   highlightText: "cyan",
-  //   icon: "#0ab7fc",
-  //   selectedNote: "#6432007e",
-  //   ambientColor: "#7fb839",
-  //   ambientOpacity: 0.8
-  // },
+  {
+    id: 0,
+    name: "חד",
+    baseColor: "#30330060",
+    background: "#000000",
+    tooltip: "#303300",
+    highlightText: "#a8a300",
+    icon: "#30330060",
+    selectedNote: "#30330060",
+    ambientColor: "#000000",
+    ambientOpacity: 0
+  }
 ];
 
 const placeholderSentences = [
@@ -182,7 +182,7 @@ export default function Home() {
       }
       if (e.ctrlKey && e.code === 'KeyJ') {
         e.preventDefault();
-        alert(notes[currentNoteIdx]?.content);
+        // alert(notes[currentNoteIdx]?.content);
         if (isTextSelected) {
           colorSelectedText();
         } else {
