@@ -53,18 +53,30 @@ const THEMES = [
     ambientColor: "#ffd900",
     ambientOpacity: 0.2
   },
-  // {
-  //   id: 3,
-  //   name: "יוון",
-  //   baseColor: "#643200",
-  //   background: "#003f69",
-  //   tooltip: "#0ab7fc",
-  //   highlightText: "cyan",
-  //   icon: "#0ab7fc",
-  //   selectedNote: "#6432007e",
-  //   ambientColor: "#7fb839",
-  //   ambientOpacity: 0.8
-  // },
+  {
+    id: 4,
+    name: "אמוק",
+    baseColor: "#360000",
+    background: "#170000",
+    tooltip: "#ac160b",
+    highlightText: "#ac160b",
+    icon: "#ac160b",
+    selectedNote: "#ac160b36",
+    ambientColor: "#360000",
+    ambientOpacity: 0
+  },
+  {
+    id: 0,
+    name: "חד",
+    baseColor: "#30330060",
+    background: "#000000",
+    tooltip: "#303300",
+    highlightText: "#a8a300",
+    icon: "#30330060",
+    selectedNote: "#30330060",
+    ambientColor: "#000000",
+    ambientOpacity: 0
+  }
 ];
 
 const placeholderSentences = [
@@ -142,7 +154,7 @@ export default function Home() {
         e.preventDefault();
         handleNewNote();
       }
-      if (e.ctrlKey && e.code === 'KeyJ') {
+      if (e.code === 'Backquote') {
         e.preventDefault();
         if (isTextSelected) {
           colorSelectedText();
@@ -339,80 +351,80 @@ export default function Home() {
     }
   };
 
-const clearSelectedTextStyle = () => {
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
+  const clearSelectedTextStyle = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
 
-  const editor = textRef.current;
-  if (!editor) return;
+    const editor = textRef.current;
+    if (!editor) return;
 
-  const range = selection.getRangeAt(0);
+    const range = selection.getRangeAt(0);
 
-  // מפצל את ה-span שגבול הבחירה (start/end) נמצא באמצעו,
-  // כך שהגבול ייפול בדיוק על גבול של span ולא בתוכו
-  const splitAtBoundary = (container, offset) => {
-    if (container.nodeType !== Node.TEXT_NODE) return;
+    // מפצל את ה-span שגבול הבחירה (start/end) נמצא באמצעו,
+    // כך שהגבול ייפול בדיוק על גבול של span ולא בתוכו
+    const splitAtBoundary = (container, offset) => {
+      if (container.nodeType !== Node.TEXT_NODE) return;
 
-    let node = container;
-    if (offset > 0 && offset < node.length) {
-      node = node.splitText(offset); // node = החלק שמתחיל בדיוק בגבול
-    } else if (offset === 0) {
-      node = container;
-    } else {
-      return; // הגבול כבר בסוף הטקסט, אין מה לפצל
-    }
-
-    // מטפס למעלה ומפצל כל span.highlighted-text אבא, כל עוד הגבול באמצעו
-    let current = node;
-    let parent = current.parentNode;
-    while (parent && parent !== editor && parent.classList?.contains('highlighted-text')) {
-      const clone = parent.cloneNode(false); // span ריק עם אותו class
-      let n = current;
-      while (n) {
-        const next = n.nextSibling;
-        clone.appendChild(n);
-        n = next;
+      let node = container;
+      if (offset > 0 && offset < node.length) {
+        node = node.splitText(offset); // node = החלק שמתחיל בדיוק בגבול
+      } else if (offset === 0) {
+        node = container;
+      } else {
+        return; // הגבול כבר בסוף הטקסט, אין מה לפצל
       }
-      parent.parentNode.insertBefore(clone, parent.nextSibling);
-      current = clone;
-      parent = clone.parentNode;
-    }
+
+      // מטפס למעלה ומפצל כל span.highlighted-text אבא, כל עוד הגבול באמצעו
+      let current = node;
+      let parent = current.parentNode;
+      while (parent && parent !== editor && parent.classList?.contains('highlighted-text')) {
+        const clone = parent.cloneNode(false); // span ריק עם אותו class
+        let n = current;
+        while (n) {
+          const next = n.nextSibling;
+          clone.appendChild(n);
+          n = next;
+        }
+        parent.parentNode.insertBefore(clone, parent.nextSibling);
+        current = clone;
+        parent = clone.parentNode;
+      }
+    };
+
+    // חשוב: מפצלים קודם את הסוף, כדי שהפיצול בהתחלה לא ישבש את ה-offset של הסוף
+    // (רלוונטי בעיקר כששניהם באותו טקסט node)
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+
+    splitAtBoundary(endContainer, endOffset);
+    splitAtBoundary(startContainer, startOffset);
+
+    // אחרי הפיצול, יוצרים מחדש Range נקי מ-start עד end (לפי אותם containers/offsets המקוריים,
+    // שעדיין תקפים כי splitText לא הזיז את הצמתים המקוריים, רק הוסיף חדשים אחריהם)
+    const cleanRange = document.createRange();
+    cleanRange.setStart(startContainer, Math.min(startOffset, startContainer.length ?? startOffset));
+    cleanRange.setEnd(endContainer, Math.min(endOffset, endContainer.length ?? endOffset));
+
+    // עכשיו כל span.highlighted-text שנחתך על ידי הבחירה חייב להיות *לגמרי* בתוכה
+    // (כי פיצלנו בדיוק על הגבולות) - אז פשוט מפרקים אותו
+    const spans = editor.querySelectorAll('span.highlighted-text');
+    spans.forEach((span) => {
+      if (cleanRange.intersectsNode(span)) {
+        const parent = span.parentNode;
+        while (span.firstChild) {
+          parent.insertBefore(span.firstChild, span);
+        }
+        parent.removeChild(span);
+      }
+    });
+
+    editor.normalize();
+    selection.removeAllRanges();
+    setContent(editor.innerHTML);
+    setIsTextSelected(false);
   };
-
-  // חשוב: מפצלים קודם את הסוף, כדי שהפיצול בהתחלה לא ישבש את ה-offset של הסוף
-  // (רלוונטי בעיקר כששניהם באותו טקסט node)
-  const endContainer = range.endContainer;
-  const endOffset = range.endOffset;
-  const startContainer = range.startContainer;
-  const startOffset = range.startOffset;
-
-  splitAtBoundary(endContainer, endOffset);
-  splitAtBoundary(startContainer, startOffset);
-
-  // אחרי הפיצול, יוצרים מחדש Range נקי מ-start עד end (לפי אותם containers/offsets המקוריים,
-  // שעדיין תקפים כי splitText לא הזיז את הצמתים המקוריים, רק הוסיף חדשים אחריהם)
-  const cleanRange = document.createRange();
-  cleanRange.setStart(startContainer, Math.min(startOffset, startContainer.length ?? startOffset));
-  cleanRange.setEnd(endContainer, Math.min(endOffset, endContainer.length ?? endOffset));
-
-  // עכשיו כל span.highlighted-text שנחתך על ידי הבחירה חייב להיות *לגמרי* בתוכה
-  // (כי פיצלנו בדיוק על הגבולות) - אז פשוט מפרקים אותו
-  const spans = editor.querySelectorAll('span.highlighted-text');
-  spans.forEach((span) => {
-    if (cleanRange.intersectsNode(span)) {
-      const parent = span.parentNode;
-      while (span.firstChild) {
-        parent.insertBefore(span.firstChild, span);
-      }
-      parent.removeChild(span);
-    }
-  });
-
-  editor.normalize();
-  selection.removeAllRanges();
-  setContent(editor.innerHTML);
-  setIsTextSelected(false);
-};
 
   const saveCurrentNote = () => {
     setNotes((prev) => {
@@ -701,8 +713,8 @@ const clearSelectedTextStyle = () => {
                 className={`delete-note-button ${isTextSelected ? 'is-clear-style-mode' : ''}`}
                 style={{
                   borderColor: activeStyle.baseColor,
-                  '--x-position': isTextSelected ? "90px" : "40px"
-
+                  // '--x-position': isTextSelected ? "90px" : "40px"
+                  '--x-position': "40px"
                 }}
               />
             </MagneticWrapper>
@@ -710,7 +722,7 @@ const clearSelectedTextStyle = () => {
 
           <TooltipWrapper
             text={isTextSelected ? "הדגש" : nextTheme()}
-            shortcut="Control + J"
+            shortcut="Backquote"
             color={activeStyle.tooltip}
           >
             <MagneticWrapper pullRadius={35} strength={0.3}>
@@ -721,8 +733,9 @@ const clearSelectedTextStyle = () => {
                 style={{
                   '--base-color': activeStyle.baseColor,
                   '--active-color': THEMES[(activeStyle.id + 1) % THEMES.length].baseColor,
-                  '--x-position': isTextSelected ? "40px" : "90px"
-                    
+                  // '--x-position': isTextSelected ? "40px" : "90px"
+                  '--x-position': "90px"
+
                 }}
               />
             </MagneticWrapper>
