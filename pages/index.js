@@ -72,8 +72,8 @@ const THEMES = [
     background: "#000000",
     tooltip: "#80808050",
     highlightText: "#a8a300",
-    icon: "#000000",
-    selectedNote: "#000000",
+    icon: "#80808050",
+    selectedNote: "#80808030",
     ambientColor: "#000000",
     ambientOpacity: 0
   }
