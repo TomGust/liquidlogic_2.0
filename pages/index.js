@@ -68,7 +68,7 @@ const THEMES = [
     ambientOpacity: 0
   },
   {
-    id: 0,
+    id: 5,
     name: "חד",
     baseColor: "#30330060",
     background: "#000000",
@@ -78,6 +78,18 @@ const THEMES = [
     selectedNote: "#30330060",
     ambientColor: "#000000",
     ambientOpacity: 0
+  },
+  {
+    id: 6,
+    name: "פיתוח",
+    baseColor: "#f80053",
+    background: "#00380c",
+    tooltip: "#f80053",
+    highlightText: "#75bf4a",
+    icon: "#f80053",
+    selectedNote: "#f8005360",
+    ambientColor: "#f80053",
+    ambientOpacity: 0.5
   }
 ];
 
@@ -635,7 +647,7 @@ export default function Home() {
   };
 
   const handleDoubleClick = () => {
-    setIsAIActive(!AIisActive);
+    // setIsAIActive(!AIisActive);
   }
 
   return (
